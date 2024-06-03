@@ -48,7 +48,7 @@ app.use(bearerToken());
 app.use(cors());
 
 // Use Middleware to all Routes
-app.use([proxyMiddleware, rateLimit, authMiddleware, expressMiddleware({ tracer })]);
+app.use([proxyMiddleware, rateLimit, expressMiddleware({ tracer }), authMiddleware]);
 
 // wajib saat naik ke production
 if (process.env.NODE_ENV === 'production') {

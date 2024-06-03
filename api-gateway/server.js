@@ -12,7 +12,7 @@ const httpStatus = require('http-status');
 const { timeDate, logTime } = require('./utils/globalFunction');
 
 // const jwt = require('jsonwebtoken');
-const authMiddleware = require('./middleware/auth');
+// const authMiddleware = require('./middleware/auth');
 
 // setiap membuat file router baru, silahkan panggil disini
 const authRouterV1 = require('./routes/v1/authenticationService');
@@ -46,8 +46,8 @@ if (!process.env.JWT_PRIVATE_KEY) {
 
 // setiap ada penambahan Router, inisialisasi index nya disini
 app.use('/api-gateway/v1/auth', authRouterV1);
-app.use('/api-gateway/v1/vehicle', authMiddleware, vehicleRouterV1);
-app.use('/api-gateway/v1/user', authMiddleware, userRouterV1);
+app.use('/api-gateway/v1/vehicle', vehicleRouterV1);
+app.use('/api-gateway/v1/user', userRouterV1);
 
 // error handler
 process.on('uncaughtException', (ex) => {
