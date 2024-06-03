@@ -11,6 +11,21 @@ const compression = require('compression');
 const httpStatus = require('http-status');
 const { timeDate, logTime } = require('./utils/globalFunction');
 const rateLimit = require('./utils/rateLimiter');
+const { Tracer, ExplicitContext, BatchRecorder, jsonEncoder: { JSON_V2 } } = require('zipkin');
+const { HttpLogger } = require('zipkin-transport-http');
+const { expressMiddleware } = require('zipkin-instrumentation-express');
+
+// Initialize Zipkin tracer
+const tracer = new Tracer({
+  ctxImpl: new ExplicitContext(),
+  recorder: new BatchRecorder({
+    logger: new HttpLogger({
+      endpoint: 'http://egi-javaconfigserver.eurokars.co.id:9411/api/v2/spans',
+      jsonEncoder: JSON_V2
+    })
+  }),
+  localServiceName: 'user-service' // Change this to your service name
+});
 
 // const jwt = require('jsonwebtoken');
 
@@ -30,7 +45,7 @@ app.use(express.urlencoded({
 }));
 app.use(bearerToken());
 app.use(cors());
-app.use([proxyMiddleware, rateLimit]);
+app.use([proxyMiddleware, rateLimit, expressMiddleware({ tracer })]);
 
 // wajib saat naik ke production
 if (process.env.NODE_ENV === 'production') {

@@ -10,6 +10,21 @@ const appRoot = require('app-root-path');
 const cors = require('cors');
 const compression = require('compression');
 const httpStatus = require('http-status');
+const { Tracer, ExplicitContext, BatchRecorder, jsonEncoder: { JSON_V2 } } = require('zipkin');
+const { HttpLogger } = require('zipkin-transport-http');
+const { expressMiddleware } = require('zipkin-instrumentation-express');
+
+// Initialize Zipkin tracer
+const tracer = new Tracer({
+  ctxImpl: new ExplicitContext(),
+  recorder: new BatchRecorder({
+    logger: new HttpLogger({
+      endpoint: 'http://egi-javaconfigserver.eurokars.co.id:9411/api/v2/spans',
+      jsonEncoder: JSON_V2
+    })
+  }),
+  localServiceName: 'vehicle-service' // Change this to your service name
+});
 
 // const jwt = require('jsonwebtoken');
 
@@ -33,7 +48,7 @@ app.use(bearerToken());
 app.use(cors());
 
 // Use Middleware to all Routes
-app.use([proxyMiddleware, rateLimit, authMiddleware]);
+app.use([proxyMiddleware, rateLimit, authMiddleware, expressMiddleware({ tracer })]);
 
 // wajib saat naik ke production
 if (process.env.NODE_ENV === 'production') {

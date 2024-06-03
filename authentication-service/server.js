@@ -13,7 +13,7 @@ const { timeDate, logTime } = require('./utils/globalFunction');
 const rateLimit = require('./utils/rateLimiter');
 const { Tracer, ExplicitContext, BatchRecorder, jsonEncoder: { JSON_V2 } } = require('zipkin');
 const { HttpLogger } = require('zipkin-transport-http');
-const { expressMiddleware, wrapExpressHttpProxy } = require('zipkin-instrumentation-express');
+const { expressMiddleware } = require('zipkin-instrumentation-express');
 
 // Initialize Zipkin tracer
 const tracer = new Tracer({
@@ -46,8 +46,6 @@ app.use(express.urlencoded({
 app.use(bearerToken());
 app.use(cors());
 app.use([proxyMiddleware, rateLimit, expressMiddleware({ tracer })]);
-
-console.log(expressMiddleware({ tracer }))
 
 // wajib saat naik ke production
 if (process.env.NODE_ENV === 'production') {
