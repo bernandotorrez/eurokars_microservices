@@ -85,4 +85,17 @@ router.get('/sso/redirect', async (req, res) => {
   return res.json(user.data);
 });
 
+router.post('/login/sso', async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await api.post('/v1/auth/login/sso', { username, password });
+
+  const accessToken = user.headers['eurokars-auth-token'];
+  const refreshToken = user.headers['eurokars-auth-refresh-token'];
+
+  res.header('Eurokars-Auth-Token', accessToken);
+  res.header('Eurokars-Auth-Refresh-Token', refreshToken);
+  return res.json(user.data);
+});
+
 module.exports = router;
