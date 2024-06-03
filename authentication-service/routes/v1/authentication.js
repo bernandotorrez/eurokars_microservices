@@ -37,6 +37,47 @@ const config = {
 
 const cca = new msal.ConfidentialClientApplication(config);
 
+router.post('/login/sso/', async (req, res) => {
+  const { username, password } = req.body;
+
+  const tokenRequest = {
+    scopes: ['api://localhost:3001/9577719f-94ff-4b40-a05c-78c57b6b7b89/login'],
+    username,
+    password
+  };
+
+  try {
+    const response = await cca.acquireTokenByUsernamePassword(tokenRequest);
+
+    const { account, idTokenClaims, idToken, accessToken, expiresOn } = response;
+
+    const data = {
+      username: account.username,
+      name: account.name,
+      ip_address: idTokenClaims.ipaddr,
+      id_token: idToken,
+      access_token: accessToken,
+      expires_on: expiresOn
+    };
+
+    res.status(httpStatus.OK).json({
+      code: httpStatus.OK,
+      success: true,
+      message: 'Successfully Logged In',
+      data
+    });
+    // res.redirect(redirect);
+  } catch (error) {
+    console.log(error)
+    res.status(httpStatus.OK).json({
+      code: httpStatus.OK,
+      success: true,
+      message: 'Failed Logged In',
+      data: null
+    });
+  }
+});
+
 router.post('/register', async (req, res) => {
   registerValidator(req.body);
 
@@ -196,36 +237,6 @@ router.get('/sso/redirect', (req, res) => {
       data: null
     });
   });
-});
-
-router.post('/login/sso', async (req, res) => {
-  loginValidator(req.body);
-
-  const { username, password } = req.body;
-
-  const tokenRequest = {
-    scopes: ['User.Read'],
-    username,
-    password
-  };
-
-  try {
-    const data = await cca.acquireTokenByUsernamePassword(tokenRequest);
-
-    res.status(httpStatus.OK).json({
-      code: httpStatus.OK,
-      success: true,
-      message: 'Successfully Logged In',
-      data
-    });
-  } catch (error) {
-    res.status(httpStatus.NOT_FOUND).json({
-      code: httpStatus.NOT_FOUND,
-      success: true,
-      message: 'Failed Logged In',
-      data: error
-    });
-  }
 });
 
 router.put('/refresh-token/sso', async (req, res) => {

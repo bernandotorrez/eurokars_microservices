@@ -12,7 +12,7 @@ const limiter = new RateLimit({
     })
   }),
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30,
+  max: 100,
   message: {
     code: httpStatus.TOO_MANY_REQUESTS,
     success: false,
