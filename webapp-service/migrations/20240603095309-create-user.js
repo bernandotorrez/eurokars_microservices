@@ -32,6 +32,14 @@ module.exports = {
         type: Sequelize.STRING(150),
         comment: 'Azure field: displayName'
       },
+      last_ip_address: {
+        allowNull: false,
+        type: Sequelize.STRING(25)
+      },
+      last_login_at: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
       created_at: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),

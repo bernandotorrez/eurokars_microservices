@@ -3,9 +3,9 @@ require('express-async-errors');
 const router = express.Router();
 
 // API Adapter
-const apiAdapter = require('../../utils/apiAdapter.js');
-const { URL_AUTH_SERVICE } = process.env;
-const api = apiAdapter(URL_AUTH_SERVICE);
+const apiAdapter = require('../../../utils/apiAdapter.js');
+const { URL_WEBAPP_SERVICE } = process.env;
+const api = apiAdapter(URL_WEBAPP_SERVICE);
 
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;

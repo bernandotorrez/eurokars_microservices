@@ -29,9 +29,7 @@ const zipkinTracer = (serviceName) => {
   });
 
   return tracer;
-}
-
-
+};
 // const jwt = require('jsonwebtoken');
 
 // Middleware

@@ -4,13 +4,14 @@ const { v4: uuidv4 } = require('uuid');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const ConflictError = require('../../exceptions/ConflictError');
+const { timeHis } = require('../../utils/globalFunction');
 
 class UserRepository {
   constructor () {
     this._model = User;
   }
 
-  async registerSSO ({ uniqueId, mail, givenName, surname, displayName }) {
+  async registerSSO ({ uniqueId, mail, givenName, surname, displayName, ipAddr }) {
     const user = await this._model.findOne({ where: { id_user: uniqueId } });
 
     if (!user) {
@@ -19,10 +20,21 @@ class UserRepository {
         email: mail,
         first_name: givenName,
         last_name: surname,
-        full_name: displayName
+        full_name: displayName,
+        last_ip_address: ipAddr,
+        last_login_at: timeHis()
       });
 
       if (!insert) throw new InvariantError('Failed insert data');
+    } else {
+      await this._model.update({
+        last_ip_address: ipAddr,
+        last_login_at: timeHis()
+      }, {
+        where: {
+          id_user: uniqueId
+        }
+      });
     }
 
     return user;
@@ -68,6 +80,10 @@ class UserRepository {
 
   async getUserByUsername (username) {
     return this._model.scope('withoutPassword').findOne({ where: { username } });
+  }
+
+  async getById (idUser) {
+    return this._model.findOne({ where: { id_user: idUser } });
   }
 }
 

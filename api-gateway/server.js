@@ -15,9 +15,11 @@ const { timeDate, logTime } = require('./utils/globalFunction');
 // const authMiddleware = require('./middleware/auth');
 
 // setiap membuat file router baru, silahkan panggil disini
-const authRouterV1 = require('./routes/v1/authenticationService');
 const vehicleRouterV1 = require('./routes/v1/vehicleService');
-const userRouterV1 = require('./routes/v1/userService');
+
+// WebApp Service
+const webAppAuthRouterV1 = require('./routes/v1/webAppService/authenticationService');
+const webAppUserRouterV1 = require('./routes/v1/webAppService/userService');
 
 const app = express();
 
@@ -45,9 +47,10 @@ if (!process.env.JWT_PRIVATE_KEY) {
 }
 
 // setiap ada penambahan Router, inisialisasi index nya disini
-app.use('/api-gateway/v1/auth', authRouterV1);
 app.use('/api-gateway/v1/vehicle', vehicleRouterV1);
-app.use('/api-gateway/v1/user', userRouterV1);
+// WebApp Service
+app.use('/api-gateway/v1/webapp/auth', webAppAuthRouterV1);
+app.use('/api-gateway/v1/webapp/user', webAppUserRouterV1);
 
 // error handler
 process.on('uncaughtException', (ex) => {

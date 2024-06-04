@@ -2,7 +2,7 @@ const express = require('express');
 require('express-async-errors');
 const router = express.Router();
 const httpStatus = require('http-status');
-const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const tokenManager = require('../../utils/tokenManager');
 
 // Repositories
@@ -11,13 +11,18 @@ const userRepository = require('../../repositories/mysql/userRepository');
 const refreshTokenRepository = require('../../repositories/mysql/refreshTokenRepository');
 
 // Validator
-const { loginValidator, registerValidator } = require('../../validators/authenticationValidator');
+const {
+  loginValidator,
+  registerValidator
+} = require('../../validators/authenticationValidator');
 
 // Azure
 const msal = require('@azure/msal-node');
 
 // helper
-const { objectToQueryString } = require('../../utils/globalFunction');
+const {
+  objectToQueryString
+} = require('../../utils/globalFunction');
 
 const config = {
   auth: {
@@ -39,7 +44,10 @@ const config = {
 const cca = new msal.ConfidentialClientApplication(config);
 
 router.post('/login/sso/', async (req, res) => {
-  const { username, password } = req.body;
+  const {
+    username,
+    password
+  } = req.body;
 
   const tokenRequest = {
     scopes: ['api://localhost:3001/9577719f-94ff-4b40-a05c-78c57b6b7b89/login'],
@@ -50,7 +58,13 @@ router.post('/login/sso/', async (req, res) => {
   try {
     const response = await cca.acquireTokenByUsernamePassword(tokenRequest);
 
-    const { account, idTokenClaims, idToken, accessToken, expiresOn } = response;
+    const {
+      account,
+      idTokenClaims,
+      idToken,
+      accessToken,
+      expiresOn
+    } = response;
 
     const data = {
       username: account.username,
@@ -81,7 +95,11 @@ router.post('/login/sso/', async (req, res) => {
 router.post('/register', async (req, res) => {
   registerValidator(req.body);
 
-  const { username, password, email } = req.body;
+  const {
+    username,
+    password,
+    email
+  } = req.body;
 
   const user = await userRepository.register(username, password, email);
 
@@ -112,7 +130,10 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   loginValidator(req.body);
 
-  const { username, password } = req.body;
+  const {
+    username,
+    password
+  } = req.body;
 
   const user = await userRepository.login(username, password);
 
@@ -143,7 +164,10 @@ router.put('/refresh-token', async (req, res) => {
 
   const decoded = tokenManager.verifyRefreshToken(refreshToken);
 
-  const { data, sub } = decoded;
+  const {
+    data,
+    sub
+  } = decoded;
 
   const payload = {
     username: data.username,
@@ -212,25 +236,32 @@ router.get('/sso/redirect', (req, res) => {
   };
 
   cca.acquireTokenByCode(tokenRequest).then(async (response) => {
-    // console.log(response);
+    const {
+      account,
+      idTokenClaims,
+      idToken,
+      accessToken,
+      expiresOn
+    } = response;
 
-    const { account, idTokenClaims, idToken, accessToken, expiresOn } = response;
+    const decodedToken = jwt.decode(accessToken);
 
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`
-    };
-
-    const userData = await axios.get('https://graph.microsoft.com/v1.0/me', { headers });
-
-    const { id, givenName, surname, displayName, mail } = userData.data;
+    const {
+      oid: uniqueId,
+      given_name: givenName,
+      family_name: surname,
+      name: displayName,
+      unique_name: mail,
+      ipaddr: ipAddr
+    } = decodedToken;
 
     await userRepository.registerSSO({
-      uniqueId: id,
+      uniqueId,
       mail,
       givenName,
       surname,
-      displayName
+      displayName,
+      ipAddr
     });
 
     const data = {

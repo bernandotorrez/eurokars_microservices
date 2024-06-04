@@ -3,9 +3,9 @@ require('express-async-errors');
 const router = express.Router();
 
 // API Adapter
-const apiAdapter = require('../../utils/apiAdapter.js');
-const { URL_USER_SERVICE } = process.env;
-const api = apiAdapter(URL_USER_SERVICE);
+const apiAdapter = require('../../../utils/apiAdapter.js');
+const { URL_WEBAPP_SERVICE } = process.env;
+const api = apiAdapter(URL_WEBAPP_SERVICE);
 
 router.get('/self', async (req, res) => {
   const accessToken = req.header('Eurokars-Auth-Token');

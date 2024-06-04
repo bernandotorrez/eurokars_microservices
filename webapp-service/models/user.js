@@ -43,6 +43,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       comment: 'Azure field: displayName'
     },
+    last_ip_address: {
+      allowNull: false,
+      type: DataTypes.STRING(25)
+    },
+    last_login_at: {
+      allowNull: false,
+      type: DataTypes.DATE
+    },
     deleted_at: {
       type: DataTypes.DATE,
       allowNull: true

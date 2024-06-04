@@ -19,9 +19,9 @@ router.get('/self', async (req, res) => {
 
   const decodedJwt = jwt.decode(header, JWT_PRIVATE_KEY);
 
-  const { sub } = decodedJwt;
+  const { oid } = decodedJwt;
 
-  const user = await userRepository.getUserByUuid(sub);
+  const user = await userRepository.getById(oid);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
