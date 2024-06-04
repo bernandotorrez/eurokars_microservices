@@ -43,7 +43,17 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'status_app',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true
+    underscored: true,
+    scopes: {
+      withoutTemplateFields: {
+        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+      },
+      active: {
+        where: {
+          status: '1'
+        }
+      }
+    }
   });
   return StatusApp;
 };

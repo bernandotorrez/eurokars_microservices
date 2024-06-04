@@ -1,6 +1,7 @@
 const { checkNull } = require('../utils/globalFunction');
 const jwt = require('jsonwebtoken');
 const AuthenticationError = require('../exceptions/AuthenticationError');
+const CLIENT_ID = process.env.CLIENT_ID;
 
 function auth (req, res, next) {
   const token = checkNull(req.header('Eurokars-Auth-Token'));
@@ -9,7 +10,12 @@ function auth (req, res, next) {
     throw new AuthenticationError('Token is Empty');
   } else {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
+      const decoded = jwt.decode(token);
+
+      const { appid } = decoded;
+
+      if (appid !== CLIENT_ID) throw new AuthenticationError('Token is Invalid');
+
       req.user = decoded;
       next();
     } catch (ex) {

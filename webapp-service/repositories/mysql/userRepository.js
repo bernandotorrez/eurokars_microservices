@@ -1,18 +1,40 @@
-const { User } = require('../../models');
+const {
+  User,
+  UserStatusApp,
+  StatusApp,
+  UserDepartment,
+  Department
+} = require('../../models');
 const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
+const {
+  v4: uuidv4
+} = require('uuid');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const ConflictError = require('../../exceptions/ConflictError');
-const { timeHis } = require('../../utils/globalFunction');
+const {
+  timeHis
+} = require('../../utils/globalFunction');
 
 class UserRepository {
   constructor () {
     this._model = User;
+    this._userStatusApp = UserStatusApp;
   }
 
-  async registerSSO ({ uniqueId, mail, givenName, surname, displayName, ipAddr }) {
-    const user = await this._model.findOne({ where: { id_user: uniqueId } });
+  async registerSSO ({
+    uniqueId,
+    mail,
+    givenName,
+    surname,
+    displayName,
+    ipAddr
+  }) {
+    const user = await this._model.findOne({
+      where: {
+        id_user: uniqueId
+      }
+    });
 
     if (!user) {
       const insert = await this._model.create({
@@ -41,7 +63,11 @@ class UserRepository {
   }
 
   async login (username, password) {
-    const user = await this._model.findOne({ where: { username } });
+    const user = await this._model.findOne({
+      where: {
+        username
+      }
+    });
 
     if (!user || user == null) {
       throw new NotFoundError('Username not found');
@@ -57,7 +83,11 @@ class UserRepository {
   }
 
   async register (username, password, email, level = 'User') {
-    const user = await this._model.scope('withoutPassword').findOne({ where: { username } });
+    const user = await this._model.scope('withoutPassword').findOne({
+      where: {
+        username
+      }
+    });
     if (user) {
       throw new ConflictError('Username Already Exist');
     }
@@ -79,11 +109,31 @@ class UserRepository {
   }
 
   async getUserByUsername (username) {
-    return this._model.scope('withoutPassword').findOne({ where: { username } });
+    return this._model.scope('withoutPassword').findOne({
+      where: {
+        username
+      }
+    });
   }
 
   async getById (idUser) {
-    return this._model.findOne({ where: { id_user: idUser } });
+    return this._model.scope('active').findOne({
+      where: {
+        id_user: idUser
+      },
+      include: [{
+        model: UserStatusApp.scope('withoutTemplateFields'),
+        as: 'user_status_app',
+        include: [{
+          model: StatusApp.scope('withoutTemplateFields'),
+          as: 'status_app'
+        }]
+      },
+      {
+        model: UserDepartment.scope('withoutTemplateFields'),
+        as: 'user_department'
+      }]
+    });
   }
 }
 

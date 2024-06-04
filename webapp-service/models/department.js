@@ -23,10 +23,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       type: DataTypes.STRING(50)
     },
-    redirect_url: {
-      allowNull: false,
-      type: DataTypes.STRING(200)
-    },
     deleted_at: {
       allowNull: true,
       type: DataTypes.DATE
@@ -40,10 +36,20 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Department',
-    tableName: 'status_app',
+    tableName: 'department',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true
+    underscored: true,
+    scopes: {
+      withoutTemplateFields: {
+        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+      },
+      active: {
+        where: {
+          status: '1'
+        }
+      }
+    }
   });
   return Department;
 };

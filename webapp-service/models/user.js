@@ -11,8 +11,21 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
-      User.hasMany(models.UserStatusApp, { foreignKey: 'id_status_app' });
-      User.hasMany(models.UserDepartment, { foreignKey: 'id_status_app' });
+      User.hasMany(models.UserStatusApp, {
+        foreignKey: 'id_user',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+        keyType: 'string',
+        as: 'user_status_app'
+      });
+
+      User.hasMany(models.UserDepartment, {
+        foreignKey: 'id_department',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+        keyType: 'string',
+        as: 'user_department'
+      });
     }
   };
   User.init({
@@ -67,7 +80,22 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'user',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true
+    underscored: true,
+    scopes: {
+      withoutTemplateFields: {
+        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+      },
+      active: {
+        where: {
+          status: '1'
+        }
+      },
+      deleted: {
+        where: {
+          status: '0'
+        }
+      }
+    }
   });
   return User;
 };

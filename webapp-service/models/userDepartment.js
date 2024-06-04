@@ -15,14 +15,16 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'id_department',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
-        keyType: 'string'
+        keyType: 'string',
+        as: 'department'
       });
 
       UserDepartment.belongsTo(models.User, {
         foreignKey: 'id_user',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
-        keyType: 'string'
+        keyType: 'string',
+        as: 'user'
       });
     }
   };
@@ -53,10 +55,20 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'UserDepartment',
-    tableName: 'user_status_app',
+    tableName: 'user_department',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true
+    underscored: true,
+    scopes: {
+      withoutTemplateFields: {
+        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+      },
+      active: {
+        where: {
+          status: '1'
+        }
+      }
+    }
   });
   return UserDepartment;
 };

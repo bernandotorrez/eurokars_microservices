@@ -1,10 +1,10 @@
-const globalFunction = require('../utils/globalFunction');
+const { checkNull } = require('../utils/globalFunction');
 const jwt = require('jsonwebtoken');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 const CLIENT_ID = process.env.CLIENT_ID;
 
 function auth (req, res, next) {
-  const token = globalFunction.checkNull(req.header('Eurokars-Auth-Token'));
+  const token = checkNull(req.header('Eurokars-Auth-Token'));
 
   if (token === '-') {
     throw new AuthenticationError('Token is Empty');
