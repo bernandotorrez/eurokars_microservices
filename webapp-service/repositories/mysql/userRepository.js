@@ -123,17 +123,21 @@ class UserRepository {
       },
       include: [{
         model: UserStatusApp.scope('withoutTemplateFields'),
+        required: true,
         as: 'user_status_app',
         include: [{
           model: StatusApp.scope('withoutTemplateFields'),
+          required: true,
           as: 'status_app'
         }]
       },
       {
         model: UserDepartment.scope('withoutTemplateFields'),
+        required: true,
         as: 'user_department',
         include: [{
           model: Department.scope('withoutTemplateFields'),
+          required: true,
           as: 'department'
         }]
       }]
