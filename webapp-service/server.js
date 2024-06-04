@@ -39,6 +39,7 @@ const authMiddleware = require('./middleware/auth');
 // setiap membuat file router baru, silahkan panggil disini
 const authRouterV1 = require('./routes/v1/authentication');
 const userRouterV1 = require('./routes/v1/user');
+const statusAppRouterV1 = require('./routes/v1/statusApp');
 
 const app = express();
 
@@ -66,6 +67,7 @@ if (!process.env.JWT_PRIVATE_KEY) {
 // setiap ada penambahan Router, inisialisasi index nya disini
 app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service') }), authRouterV1);
 app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') }), authMiddleware], userRouterV1);
+app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('statusApp-service') }), authMiddleware], statusAppRouterV1);
 
 // Middleware Flow : proxyMiddleware -> rateLimit -> zipkinTracer -> authMiddleware
 
