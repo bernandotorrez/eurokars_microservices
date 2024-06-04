@@ -131,7 +131,11 @@ class UserRepository {
       },
       {
         model: UserDepartment.scope('withoutTemplateFields'),
-        as: 'user_department'
+        as: 'user_department',
+        include: [{
+          model: Department.scope('withoutTemplateFields'),
+          as: 'department'
+        }]
       }]
     });
   }

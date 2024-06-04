@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       User.hasMany(models.UserDepartment, {
-        foreignKey: 'id_department',
+        foreignKey: 'id_user',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
