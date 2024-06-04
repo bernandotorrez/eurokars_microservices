@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class User extends Model {
+  class UserStatusApp extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,37 +11,34 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
-      User.hasMany(models.UserStatusApp, { foreignKey: 'id_status_app' });
-      User.hasMany(models.UserDepartment, { foreignKey: 'id_status_app' });
+      UserStatusApp.belongsTo(models.StatusApp, {
+        foreignKey: 'id_status_app',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+        keyType: 'string'
+      });
+
+      UserStatusApp.belongsTo(models.User, {
+        foreignKey: 'id_user',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+        keyType: 'string'
+      });
     }
   };
-  User.init({
+  UserStatusApp.init({
+    id_user_status_app: {
+      allowNull: false,
+      primaryKey: true,
+      type: DataTypes.STRING(50)
+    },
     id_user: {
-      type: DataTypes.STRING(50),
-      primaryKey: true
-    },
-    email: {
-      type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
+      type: DataTypes.STRING(50)
     },
-    first_name: {
-      type: DataTypes.STRING(50),
+    id_status_app: {
       allowNull: false,
-      comment: 'Azure field: givenName'
-    },
-    last_name: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-      comment: 'Azure field: surname'
-    },
-    full_name: {
-      type: DataTypes.STRING(150),
-      allowNull: false,
-      comment: 'Azure field: displayName'
+      type: DataTypes.STRING(50)
     },
     deleted_at: {
       type: DataTypes.DATE,
@@ -55,11 +52,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
-    modelName: 'User',
-    tableName: 'user',
+    modelName: 'UserStatusApp',
+    tableName: 'user_status_app',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true
   });
-  return User;
+  return UserStatusApp;
 };
