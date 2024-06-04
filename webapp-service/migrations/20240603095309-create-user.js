@@ -1,40 +1,36 @@
 'use strict';
+
+const tableName = 'user';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('users', {
-      uuid: {
+    await queryInterface.createTable(tableName, {
+      id_user: {
         allowNull: false,
         primaryKey: true,
-        type: Sequelize.STRING(50)
-      },
-      id_status_app: {
-        allowNull: false,
         type: Sequelize.STRING(50)
       },
       email: {
         allowNull: false,
         unique: true,
-        type: Sequelize.STRING(100)
-      },
-      password: {
-        allowNull: false,
-        type: Sequelize.STRING(100)
-      },
-      array_id_det_company: {
-        allowNull: false,
-        type: Sequelize.STRING(200)
+        type: Sequelize.STRING(100),
+        validate: {
+          isEmail: true
+        }
       },
       first_name: {
         allowNull: false,
-        type: Sequelize.STRING(50)
+        type: Sequelize.STRING(50),
+        comment: 'Azure field: givenName'
       },
       last_name: {
         allowNull: true,
-        type: Sequelize.STRING(50)
+        type: Sequelize.STRING(50),
+        comment: 'Azure field: surname'
       },
       full_name: {
         allowNull: false,
-        type: Sequelize.STRING(150)
+        type: Sequelize.STRING(150),
+        comment: 'Azure field: displayName'
       },
       created_at: {
         allowNull: false,
@@ -52,15 +48,18 @@ module.exports = {
       status: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
-        defaultValue: '1'
+        defaultValue: '1',
+        comment: '0 = Deleted, 1 = Active'
       }
     });
 
     // Define indexes
-    await queryInterface.addIndex('users', ['id_status_app']);
-    await queryInterface.addIndex('users', ['email']);
+    await queryInterface.addIndex(tableName, {
+      fields: ['email'],
+      name: 'idx_email'
+    });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable(tableName);
   }
 };
