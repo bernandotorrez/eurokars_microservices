@@ -16,7 +16,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'user_status_app'
+        as: 'user_status_app',
+        scope: { status: '1' }
       });
 
       User.hasMany(models.UserDepartment, {
@@ -24,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'user_department'
+        as: 'user_department',
+        scope: { status: '1' }
       });
     }
   };
@@ -81,6 +83,11 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true,
+    defaultScope: {
+      where: {
+        status: '1'
+      }
+    },
     scopes: {
       withoutTemplateFields: {
         attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }

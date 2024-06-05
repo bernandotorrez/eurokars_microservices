@@ -5,13 +5,9 @@ const {
   UserDepartment,
   Department
 } = require('../../models');
-const bcrypt = require('bcrypt');
-const {
-  v4: uuidv4
-} = require('uuid');
+
 const InvariantError = require('../../exceptions/InvariantError');
-const NotFoundError = require('../../exceptions/NotFoundError');
-const ConflictError = require('../../exceptions/ConflictError');
+
 const {
   timeHis
 } = require('../../utils/globalFunction');
@@ -62,82 +58,24 @@ class UserRepository {
     return user;
   }
 
-  async login (username, password) {
-    const user = await this._model.findOne({
-      where: {
-        username
-      }
-    });
-
-    if (!user || user == null) {
-      throw new NotFoundError('Username not found');
-    }
-
-    const match = await bcrypt.compare(password, user.password);
-
-    if (!match) {
-      throw new InvariantError('Username or Password is Incorrect');
-    }
-
-    return user;
-  }
-
-  async register (username, password, email, level = 'User') {
-    const user = await this._model.scope('withoutPassword').findOne({
-      where: {
-        username
-      }
-    });
-    if (user) {
-      throw new ConflictError('Username Already Exist');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    try {
-      const user = await this._model.create({
-        uuid: uuidv4(),
-        username,
-        email,
-        password: hashedPassword,
-        level
-      });
-
-      return user;
-    } catch (error) {
-      throw new InvariantError('Failed Register User');
-    }
-  }
-
-  async getUserByUsername (username) {
-    return this._model.scope('withoutPassword').findOne({
-      where: {
-        username
-      }
-    });
-  }
-
   async getById (idUser) {
-    return this._model.scope('active').findOne({
+    return this._model.findOne({
       where: {
         id_user: idUser
       },
       include: [{
         model: UserStatusApp.scope('withoutTemplateFields'),
-        required: true,
         as: 'user_status_app',
         include: [{
           model: StatusApp.scope('withoutTemplateFields'),
-          required: true,
           as: 'status_app'
         }]
       },
       {
         model: UserDepartment.scope('withoutTemplateFields'),
-        required: true,
         as: 'user_department',
         include: [{
           model: Department.scope('withoutTemplateFields'),
-          required: true,
           as: 'department'
         }]
       }]

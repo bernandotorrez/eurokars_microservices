@@ -40,6 +40,11 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true,
+    defaultScope: {
+      where: {
+        status: '1'
+      }
+    },
     scopes: {
       withoutTemplateFields: {
         attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
@@ -47,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
       active: {
         where: {
           status: '1'
+        }
+      },
+      deleted: {
+        where: {
+          status: '0'
         }
       }
     }

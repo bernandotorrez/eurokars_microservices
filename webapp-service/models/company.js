@@ -43,7 +43,27 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'company',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    underscored: true
+    underscored: true,
+    defaultScope: {
+      where: {
+        status: '1'
+      }
+    },
+    scopes: {
+      withoutTemplateFields: {
+        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+      },
+      active: {
+        where: {
+          status: '1'
+        }
+      },
+      deleted: {
+        where: {
+          status: '0'
+        }
+      }
+    }
   });
   return Company;
 };
