@@ -10,25 +10,16 @@ const userRepository = require('../../repositories/mysql/userRepository');
 
 const refreshTokenRepository = require('../../repositories/mysql/refreshTokenRepository');
 
-// Validator
-const {
-  loginValidator,
-  registerValidator
-} = require('../../validators/authenticationValidator');
-
 // Azure
 const msal = require('@azure/msal-node');
 
-// helper
-const {
-  objectToQueryString
-} = require('../../utils/globalFunction');
+const { CLIENT_ID, REDIRECT_URI, AUTHORITY, CLIENT_SECRET } = process.env;
 
 const config = {
   auth: {
-    clientId: process.env.CLIENT_ID,
-    authority: process.env.AUTHORITY,
-    clientSecret: process.env.CLIENT_SECRET
+    clientId: CLIENT_ID,
+    authority: AUTHORITY,
+    clientSecret: CLIENT_SECRET
   },
   system: {
     loggerOptions: {
@@ -42,120 +33,6 @@ const config = {
 };
 
 const cca = new msal.ConfidentialClientApplication(config);
-
-router.post('/login/sso/', async (req, res) => {
-  const {
-    username,
-    password
-  } = req.body;
-
-  const tokenRequest = {
-    scopes: ['api://localhost:3001/9577719f-94ff-4b40-a05c-78c57b6b7b89/login'],
-    username,
-    password
-  };
-
-  try {
-    const response = await cca.acquireTokenByUsernamePassword(tokenRequest);
-
-    const {
-      account,
-      idTokenClaims,
-      idToken,
-      accessToken,
-      expiresOn
-    } = response;
-
-    const data = {
-      username: account.username,
-      name: account.name,
-      ip_address: idTokenClaims.ipaddr,
-      id_token: idToken,
-      access_token: accessToken,
-      expires_on: expiresOn
-    };
-
-    res.status(httpStatus.OK).json({
-      code: httpStatus.OK,
-      success: true,
-      message: 'Successfully Logged In',
-      data
-    });
-    // res.redirect(redirect);
-  } catch (error) {
-    res.status(httpStatus.OK).json({
-      code: httpStatus.OK,
-      success: true,
-      message: 'Failed Logged In',
-      data: null
-    });
-  }
-});
-
-router.post('/register', async (req, res) => {
-  registerValidator(req.body);
-
-  const {
-    username,
-    password,
-    email
-  } = req.body;
-
-  const user = await userRepository.register(username, password, email);
-
-  const data = {
-    username: user.username,
-    level: user.level
-  };
-
-  const accessToken = tokenManager.generateAccessToken(user.uuid, data);
-  const refreshToken = tokenManager.generateRefreshToken(user.uuid, data);
-
-  await refreshTokenRepository.addRefreshToken(refreshToken);
-
-  res.header('Eurokars-Auth-Token', accessToken);
-  res.header('Eurokars-Auth-Refresh-Token', refreshToken);
-  res.status(httpStatus.CREATED).json({
-    code: httpStatus.CREATED,
-    success: true,
-    message: 'Successfully Registered',
-    data: {
-      user: user.username,
-      level: user.level,
-      created_at: user.created_at
-    }
-  });
-});
-
-router.post('/login', async (req, res) => {
-  loginValidator(req.body);
-
-  const {
-    username,
-    password
-  } = req.body;
-
-  const user = await userRepository.login(username, password);
-
-  const data = {
-    username: user.username,
-    level: user.level
-  };
-
-  const accessToken = tokenManager.generateAccessToken(user.uuid, data);
-  const refreshToken = tokenManager.generateRefreshToken(user.uuid, data);
-
-  await refreshTokenRepository.addRefreshToken(refreshToken);
-
-  res.header('Eurokars-Auth-Token', accessToken);
-  res.header('Eurokars-Auth-Refresh-Token', refreshToken);
-  res.status(httpStatus.OK).json({
-    code: httpStatus.OK,
-    success: true,
-    message: 'Successfully Logged In',
-    data
-  });
-});
 
 router.put('/refresh-token', async (req, res) => {
   const refreshToken = req.header('Eurokars-Auth-Refresh-Token');
@@ -186,26 +63,10 @@ router.put('/refresh-token', async (req, res) => {
   });
 });
 
-router.delete('/logout', async (req, res) => {
-  // const refreshToken = req.header('Eurokars-Auth-Refresh-Token');
-
-  // await refreshTokenRepository.getRefreshToken(refreshToken);
-  // await refreshTokenRepository.deleteRefreshToken(refreshToken);
-
-  // res.header('Eurokars-Auth-Token', '');
-  // res.header('Eurokars-Auth-Refresh-Token', '');
-  res.status(httpStatus.OK).json({
-    code: httpStatus.OK,
-    success: true,
-    message: 'Successfully Logged Out',
-    data: null
-  });
-});
-
 router.get('/login/sso/', async (req, res) => {
   const tokenRequest = {
     scopes: ['User.Read'],
-    redirectUri: 'http://localhost:3001/v1/auth/sso/redirect'
+    redirectUri: REDIRECT_URI
   };
 
   try {
@@ -217,21 +78,20 @@ router.get('/login/sso/', async (req, res) => {
       message: 'Successfully Get Login URL',
       data: redirect
     });
-    // res.redirect(redirect);
   } catch (error) {
     res.status(httpStatus.OK).json({
       code: httpStatus.OK,
-      success: true,
+      success: false,
       message: 'Failed Get Login URL',
       data: null
     });
   }
 });
 
-router.get('/sso/redirect', (req, res) => {
+router.get('/sso/token', (req, res) => {
   const tokenRequest = {
     code: req.query.code,
-    redirectUri: 'http://localhost:3001/v1/auth/sso/redirect',
+    redirectUri: REDIRECT_URI,
     scopes: ['User.Read']
   };
 
@@ -273,9 +133,12 @@ router.get('/sso/redirect', (req, res) => {
       expires_on: expiresOn
     };
 
-    const queryString = objectToQueryString(data);
-
-    res.redirect('http://localhost:3004/redirect?data=' + btoa(queryString));
+    res.status(httpStatus.OK).json({
+      code: httpStatus.OK,
+      success: true,
+      message: 'Success Logged In',
+      data
+    });
   }).catch((error) => {
     console.log(error);
     res.status(httpStatus.OK).json({
