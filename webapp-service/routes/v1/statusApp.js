@@ -50,4 +50,32 @@ router.post('/', async (req, res) => {
   });
 });
 
+router.put('/:id', async (req, res) => {
+  statusAppValidator.statusAppValidator(req.body);
+
+  const { id } = req.params;
+
+  await statusAppRepository.updateStatusApp(id, req.body);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Update Status App',
+    data: id
+  });
+});
+
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  await statusAppRepository.deleteStatusApp(id);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Delete Status App',
+    data: id
+  });
+});
+
 module.exports = router;

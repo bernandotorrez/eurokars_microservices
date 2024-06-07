@@ -8,10 +8,9 @@ const { URL_WEBAPP_SERVICE } = process.env;
 const api = apiAdapter(URL_WEBAPP_SERVICE);
 
 router.get('/', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
   const headers = {
     headers: {
-      'Eurokars-Auth-Token': accessToken
+      'Eurokars-Auth-Token': req.header('Eurokars-Auth-Token')
     }
   };
 
@@ -20,14 +19,39 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
   const headers = {
     headers: {
-      'Eurokars-Auth-Token': accessToken
+      'Eurokars-Auth-Token': req.header('Eurokars-Auth-Token')
     }
   };
 
   const vehicle = await api.post('/v1/status-app', req.body, headers);
+  return res.json(vehicle.data);
+});
+
+router.put('/:id', async (req, res) => {
+  const headers = {
+    headers: {
+      'Eurokars-Auth-Token': req.header('Eurokars-Auth-Token')
+    }
+  };
+
+  const { id } = req.params;
+
+  const vehicle = await api.put(`/v1/status-app/${id}`, req.body, headers);
+  return res.json(vehicle.data);
+});
+
+router.delete('/:id', async (req, res) => {
+  const headers = {
+    headers: {
+      'Eurokars-Auth-Token': req.header('Eurokars-Auth-Token')
+    }
+  };
+
+  const { id } = req.params;
+
+  const vehicle = await api.delete(`/v1/status-app/${id}`, headers);
   return res.json(vehicle.data);
 });
 

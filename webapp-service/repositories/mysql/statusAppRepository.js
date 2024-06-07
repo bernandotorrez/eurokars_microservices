@@ -4,6 +4,7 @@ const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const { timeHis } = require('../../utils/globalFunction');
+const { v4: uuidv4 } = require('uuid');
 
 class StatusAppRepository {
   constructor () {
@@ -98,9 +99,12 @@ class StatusAppRepository {
     return statusApp;
   }
 
-  async addStatusApp (statusApp, redirectUrl) {
+  async addStatusApp (params) {
+    const { status_app: statusApp, redirect_url: redirectUrl } = params;
+
     try {
       return await this._model.create({
+        id_status_app: uuidv4().toString(),
         status_app: statusApp,
         redirect_url: redirectUrl
       });
@@ -109,7 +113,7 @@ class StatusAppRepository {
     }
   }
 
-  async updateStatusApp (id, statusApp, redirectUrl) {
+  async updateStatusApp (id, params) {
     if (id === '') throw new BadRequestError('ID not Provided');
 
     const checkStatusApp = await this._model.findOne({ where: { id_status_app: id } });
@@ -117,6 +121,8 @@ class StatusAppRepository {
     if (!checkStatusApp) throw new NotFoundError('Status App not found');
 
     try {
+      const { status_app: statusApp, redirect_url: redirectUrl } = params;
+
       return await this._model.update({
         status_app: statusApp,
         redirect_url: redirectUrl,
@@ -132,12 +138,22 @@ class StatusAppRepository {
   }
 
   async deleteStatusApp (id) {
-    if (id === '') throw new BadRequestError('ID Status App Required');
+    await this.getStatusApp(id);
 
     const arrayId = id.split(',');
 
     try {
-      return await this._model.destroy({ where: { id_status_app: { [Op.in]: arrayId } } });
+      return await this._model.update({
+        status: '0',
+        deleted_at: timeHis()
+      },
+      {
+        where: {
+          id_status_app: {
+            [Op.in]: arrayId
+          }
+        }
+      });
     } catch (error) {
       throw new InvariantError('Delete Status App Failed');
     }
