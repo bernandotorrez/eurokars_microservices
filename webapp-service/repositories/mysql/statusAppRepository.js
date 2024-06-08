@@ -61,17 +61,12 @@ class StatusAppRepository {
       querySql.where = {
         [Op.or]: [
           {
-            model: {
+            status_app: {
               [Op.substring]: search
             }
           },
           {
-            type: {
-              [Op.substring]: search
-            }
-          },
-          {
-            colour: {
+            redirect_url: {
               [Op.substring]: search
             }
           }

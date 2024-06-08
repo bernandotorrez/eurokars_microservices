@@ -14,8 +14,21 @@ router.get('/', async (req, res) => {
     }
   };
 
-  const user = await api.get('/v1/status-app', headers);
-  return res.json(user.data);
+  const statusApp = await api.get(`/v1/status-app?${req.url.split('?')[1]}`, headers);
+  return res.json(statusApp.data);
+});
+
+router.get('/:id', async (req, res) => {
+  const accessToken = req.header('Eurokars-Auth-Token');
+  const headers = {
+    headers: {
+      'Eurokars-Auth-Token': accessToken
+    }
+  };
+
+  const { id } = req.params;
+  const statusApp = await api.get(`/v1/status-app/${id}`, headers);
+  return res.json(statusApp.data);
 });
 
 router.post('/', async (req, res) => {

@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
 
   const statusApp = await statusAppRepository.addStatusApp(req.body);
 
-  statusApp.id_statusApp = statusApp.null;
+  statusApp.id_status_app = statusApp.null;
 
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,

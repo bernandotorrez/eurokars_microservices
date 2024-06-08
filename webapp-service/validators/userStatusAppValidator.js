@@ -2,13 +2,13 @@ const Joi = require('@hapi/joi');
 const BadRequestError = require('../exceptions/BadRequestError');
 const { convertMessage } = require('../utils/globalFunction');
 
-const StatusAppSchema = Joi.object({
-  status_app: Joi.string().min(2).max(50).required(),
-  redirect_url: Joi.string().min(3).max(200).required()
+const UserStatusAppSchema = Joi.object({
+  id_user: Joi.string().min(1).max(50).required(),
+  id_status_app: Joi.string().min(1).max(50).required()
 });
 
-const statusAppValidator = (payload) => {
-  const validationResult = StatusAppSchema.validate(payload, { abortEarly: false });
+const userStatusAppValidator = (payload) => {
+  const validationResult = UserStatusAppSchema.validate(payload, { abortEarly: false });
 
   if (validationResult.error) {
     const error = JSON.stringify(convertMessage(validationResult.error.details));
@@ -17,5 +17,5 @@ const statusAppValidator = (payload) => {
 };
 
 module.exports = {
-  statusAppValidator
+  userStatusAppValidator
 };

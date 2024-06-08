@@ -41,6 +41,7 @@ const authRouterV1 = require('./routes/v1/authentication');
 const userRouterV1 = require('./routes/v1/user');
 const statusAppRouterV1 = require('./routes/v1/statusApp');
 const departmentRouterV1 = require('./routes/v1/department');
+const userStatusAppRouterV1 = require('./routes/v1/userStatusApp');
 
 const app = express();
 
@@ -69,7 +70,8 @@ if (!process.env.JWT_PRIVATE_KEY) {
 app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service') }), authRouterV1);
 app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') }), authMiddleware], userRouterV1);
 app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('statusApp-service') }), authMiddleware], statusAppRouterV1);
-app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('statusApp-service') }), authMiddleware], departmentRouterV1);
+app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') }), authMiddleware], departmentRouterV1);
+app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('userStatusApp-service') }), authMiddleware], userStatusAppRouterV1);
 
 // Middleware Flow : proxyMiddleware -> rateLimit -> zipkinTracer -> authMiddleware
 

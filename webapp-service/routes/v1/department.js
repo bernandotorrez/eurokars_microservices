@@ -38,15 +38,15 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   departmentValidator.departmentValidator(req.body);
 
-  const deparment = await departmentRepository.addDepartment(req.body);
+  const department = await departmentRepository.addDepartment(req.body);
 
-  deparment.id_deparment = deparment.null;
+  department.id_department = department.null;
 
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,
     message: 'Successfully Add Department',
-    data: deparment
+    data: department
   });
 });
 

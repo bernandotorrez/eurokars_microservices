@@ -61,17 +61,7 @@ class DepartmentRepository {
       querySql.where = {
         [Op.or]: [
           {
-            model: {
-              [Op.substring]: search
-            }
-          },
-          {
-            type: {
-              [Op.substring]: search
-            }
-          },
-          {
-            colour: {
+            department: {
               [Op.substring]: search
             }
           }
