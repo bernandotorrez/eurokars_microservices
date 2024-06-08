@@ -45,6 +45,12 @@ module.exports = (sequelize, DataTypes) => {
         status: '1'
       }
     },
+    hooks: {
+      beforeCreate: (user) => {
+        // Set updatedAt to null to prevent auto-filling
+        user.updated_at = null;
+      }
+    },
     scopes: {
       withoutTemplateFields: {
         attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }

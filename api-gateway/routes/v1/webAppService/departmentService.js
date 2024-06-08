@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     }
   };
 
-  const user = await api.get('/v1/status-app', headers);
+  const user = await api.get('/v1/department', headers);
   return res.json(user.data);
 });
 
@@ -25,8 +25,8 @@ router.post('/', async (req, res) => {
     }
   };
 
-  const statusApp = await api.post('/v1/status-app', req.body, headers);
-  return res.json(statusApp.data);
+  const department = await api.post('/v1/department', req.body, headers);
+  return res.json(department.data);
 });
 
 router.put('/:id', async (req, res) => {
@@ -38,8 +38,8 @@ router.put('/:id', async (req, res) => {
 
   const { id } = req.params;
 
-  const statusApp = await api.put(`/v1/status-app/${id}`, req.body, headers);
-  return res.json(statusApp.data);
+  const department = await api.put(`/v1/department/${id}`, req.body, headers);
+  return res.json(department.data);
 });
 
 router.delete('/:id', async (req, res) => {
@@ -51,8 +51,8 @@ router.delete('/:id', async (req, res) => {
 
   const { id } = req.params;
 
-  const statusApp = await api.delete(`/v1/status-app/${id}`, headers);
-  return res.json(statusApp.data);
+  const department = await api.delete(`/v1/department/${id}`, headers);
+  return res.json(department.data);
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const { StatusApp } = require('../../models');
+const { Department } = require('../../models');
 const { Op } = require('sequelize');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
@@ -7,9 +7,9 @@ const ConflictError = require('../../exceptions/ConflictError');
 const { timeHis, capitalEachWord } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
-class StatusAppRepository {
+class DepartmentRepository {
   constructor () {
-    this._model = StatusApp;
+    this._model = Department;
     this._primaryKey = this._model.primaryKeyAttribute;
     this._sortBy = this._primaryKey;
     this._sort = 'ASC';
@@ -17,7 +17,7 @@ class StatusAppRepository {
     this._number = 0;
   }
 
-  async getStatusApps ({ search, sort, page }) {
+  async getDepartments ({ search, sort, page }) {
     const querySql = {};
 
     // sorting
@@ -90,49 +90,48 @@ class StatusAppRepository {
     return data;
   }
 
-  async getStatusApp (id = '') {
-    if (id === '') throw new BadRequestError('ID Status App Required');
+  async getDepartment (id = '') {
+    if (id === '') throw new BadRequestError('ID Department Required');
 
-    const statusApp = await this._model.findOne({ where: { id_status_app: id } });
+    const department = await this._model.findOne({ where: { id_department: id } });
 
-    if (!statusApp) throw new NotFoundError('Status App not found');
+    if (!department) throw new NotFoundError('Department not found');
 
-    return statusApp;
+    return department;
   }
 
-  async addStatusApp (params) {
-    const { status_app: statusApp, redirect_url: redirectUrl } = params;
+  async addDepartment (params) {
+    const { department } = params;
 
-    const checkDuplicate = await this.checkDuplicate(statusApp);
+    const checkDuplicate = await this.checkDuplicate(department);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusApp} already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${department} already Created`);
 
     try {
       return await this._model.create({
-        id_status_app: uuidv4().toString(),
-        status_app: capitalEachWord(statusApp),
-        redirect_url: redirectUrl
+        id_department: uuidv4().toString(),
+        department: capitalEachWord(department)
       });
     } catch (error) {
-      throw new InvariantError('Add Status App Failed');
+      throw new InvariantError('Add Department Failed');
     }
   }
 
-  async checkDuplicate (statusApp) {
+  async checkDuplicate (department) {
     const check = await this._model.findAll({
       where: {
-        status_app: capitalEachWord(statusApp)
+        department: capitalEachWord(department)
       }
     });
 
     return check.length;
   }
 
-  async checkDuplicateEdit (id, statusApp) {
+  async checkDuplicateEdit (id, department) {
     const check = await this._model.findAll({
       where: {
-        status_app: capitalEachWord(statusApp),
-        id_status_app: {
+        department: capitalEachWord(department),
+        id_department: {
           [Op.ne]: id
         }
       }
@@ -141,36 +140,35 @@ class StatusAppRepository {
     return check.length;
   }
 
-  async updateStatusApp (id, params) {
-    if (id === '') throw new BadRequestError('ID not Provided');
+  async updateDepartment (id, params) {
+    if (id === '') throw new BadRequestError('ID Department not Provided');
 
-    const checkStatusApp = await this._model.findOne({ where: { id_status_app: id } });
+    const checkDepartment = await this._model.findOne({ where: { id_department: id } });
 
-    if (!checkStatusApp) throw new NotFoundError('Status App not found');
+    if (!checkDepartment) throw new NotFoundError('Department not found');
 
-    const { status_app: statusApp, redirect_url: redirectUrl } = params;
+    const { department } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, statusApp);
+    const checkDuplicate = await this.checkDuplicateEdit(id, department);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusApp} already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${department} alrady Created`);
 
     try {
       return await this._model.update({
-        status_app: capitalEachWord(statusApp),
-        redirect_url: redirectUrl,
+        department: capitalEachWord(department),
         updated_at: timeHis()
       }, {
         where: {
-          id_status_app: id
+          id_department: id
         }
       });
     } catch (error) {
-      throw new InvariantError('Update Status App Failed');
+      throw new InvariantError('Update Department Failed');
     }
   }
 
-  async deleteStatusApp (id) {
-    await this.getStatusApp(id);
+  async deleteDepartment (id) {
+    await this.getDepartment(id);
 
     const arrayId = id.split(',');
 
@@ -181,15 +179,15 @@ class StatusAppRepository {
       },
       {
         where: {
-          id_status_app: {
+          id_department: {
             [Op.in]: arrayId
           }
         }
       });
     } catch (error) {
-      throw new InvariantError('Delete Status App Failed');
+      throw new InvariantError('Delete Department Failed');
     }
   }
 }
 
-module.exports = new StatusAppRepository();
+module.exports = new DepartmentRepository();

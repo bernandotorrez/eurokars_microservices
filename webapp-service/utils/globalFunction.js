@@ -117,6 +117,12 @@ function objectToQueryString (obj) {
   return Object.keys(obj).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`).join('&');
 }
 
+function capitalizeWords (str) {
+  return str.replace(/\b\w/g, function (char) {
+    return char.toUpperCase();
+  });
+}
+
 module.exports = {
   time,
   timeHis,
@@ -127,5 +133,6 @@ module.exports = {
   checkDate,
   timeDate,
   convertMessage,
-  objectToQueryString
+  objectToQueryString,
+  capitalizeWords
 };
