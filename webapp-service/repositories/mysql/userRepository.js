@@ -16,6 +16,24 @@ class UserRepository {
   constructor () {
     this._model = User;
     this._userStatusApp = UserStatusApp;
+    this._includeModels = [
+      {
+        model: UserStatusApp.scope('withoutTemplateFields'),
+        as: 'user_status_app',
+        include: [{
+          model: StatusApp.scope('withoutTemplateFields'),
+          as: 'status_app'
+        }]
+      },
+      {
+        model: UserDepartment.scope('withoutTemplateFields'),
+        as: 'user_department',
+        include: [{
+          model: Department.scope('withoutTemplateFields'),
+          as: 'department'
+        }]
+      }
+    ];
   }
 
   async registerSSO ({
@@ -59,27 +77,15 @@ class UserRepository {
   }
 
   async getById (idUser) {
-    return this._model.findOne({
-      where: {
-        id_user: idUser
-      },
-      include: [{
-        model: UserStatusApp.scope('withoutTemplateFields'),
-        as: 'user_status_app',
-        include: [{
-          model: StatusApp.scope('withoutTemplateFields'),
-          as: 'status_app'
-        }]
-      },
-      {
-        model: UserDepartment.scope('withoutTemplateFields'),
-        as: 'user_department',
-        include: [{
-          model: Department.scope('withoutTemplateFields'),
-          as: 'department'
-        }]
-      }]
-    });
+    const querySql = {};
+
+    querySql.where = {
+      id_user: idUser
+    };
+
+    querySql.include = this._includeModels;
+
+    return this._model.findOne(querySql);
   }
 }
 

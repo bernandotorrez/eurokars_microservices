@@ -1,4 +1,4 @@
-const { UserStatusApp } = require('../../models');
+const { UserStatusApp, StatusApp, User } = require('../../models');
 const { Op } = require('sequelize');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
@@ -15,6 +15,18 @@ class UserStatusAppRepository {
     this._sort = 'ASC';
     this._limit = 5;
     this._number = 0;
+    this._includeModels = [
+      {
+        model: StatusApp.scope('withoutTemplateFields'),
+        as: 'status_app',
+        required: true
+      },
+      {
+        model: User.scope('withoutTemplateFields'),
+        as: 'user',
+        required: true
+      }
+    ];
   }
 
   async getUserStatusApps ({ search, sort, page }) {
@@ -69,6 +81,31 @@ class UserStatusAppRepository {
             id_user: {
               [Op.substring]: search
             }
+          },
+          {
+            '$status_app.status_app$': { // Search in field relation
+              [Op.substring]: search
+            }
+          },
+          {
+            '$status_app.redirect_url$': { // Search in field relation
+              [Op.substring]: search
+            }
+          },
+          {
+            '$user.first_name$': { // Search in field relation
+              [Op.substring]: search
+            }
+          },
+          {
+            '$user.last_name$': { // Search in field relation
+              [Op.substring]: search
+            }
+          },
+          {
+            '$user.full_name$': { // Search in field relation
+              [Op.substring]: search
+            }
           }
         ]
       };
@@ -80,6 +117,8 @@ class UserStatusAppRepository {
     //   ]
     // });
 
+    querySql.include = this._includeModels;
+
     const data = await this._model.findAndCountAll(querySql);
 
     return data;
@@ -88,7 +127,12 @@ class UserStatusAppRepository {
   async getUserStatusApp (id = '') {
     if (id === '') throw new BadRequestError('ID User Status App Required');
 
-    const userStatusApp = await this._model.findOne({ where: { id_user_status_app: id } });
+    const querySql = {};
+
+    querySql.where = { id_user_status_app: id };
+    querySql.include = this._includeModels;
+
+    const userStatusApp = await this._model.findOne(querySql);
 
     if (!userStatusApp) throw new NotFoundError('User Status App not found');
 
@@ -109,7 +153,7 @@ class UserStatusAppRepository {
         id_user: idUser
       });
     } catch (error) {
-      throw new InvariantError('Add Status App Failed');
+      throw new InvariantError('Add User Status App Failed');
     }
   }
 
@@ -118,6 +162,20 @@ class UserStatusAppRepository {
       where: {
         id_status_app: idStatusApp,
         id_user: idUser
+      }
+    });
+
+    return check.length;
+  }
+
+  async checkDuplicateEdit (id, idStatusApp, idUser) {
+    const check = await this._model.findAll({
+      where: {
+        id_status_app: idStatusApp,
+        id_user: idUser,
+        id_user_status_app: {
+          [Op.ne]: id
+        }
       }
     });
 

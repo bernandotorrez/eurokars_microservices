@@ -16,7 +16,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'status_app'
+        as: 'status_app',
+        scope: { status: '1' }
       });
 
       UserStatusApp.belongsTo(models.User, {
@@ -24,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'user'
+        as: 'user',
+        scope: { status: '1' }
       });
     }
   };

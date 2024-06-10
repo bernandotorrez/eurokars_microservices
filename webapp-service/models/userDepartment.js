@@ -16,7 +16,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'department'
+        as: 'department',
+        scope: { status: 1 }
       });
 
       UserDepartment.belongsTo(models.User, {
@@ -24,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         keyType: 'string',
-        as: 'user'
+        as: 'user',
+        scope: { status: 1 }
       });
     }
   };
