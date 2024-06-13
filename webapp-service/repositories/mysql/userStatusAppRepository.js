@@ -29,7 +29,7 @@ class UserStatusAppRepository {
     ];
   }
 
-  async getUserStatusApps ({ search, sort, page }) {
+  async getAll ({ search, sort, page }) {
     const querySql = {};
 
     // sorting
@@ -124,7 +124,7 @@ class UserStatusAppRepository {
     return data;
   }
 
-  async getUserStatusApp (id = '') {
+  async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID User Status App Required');
 
     const querySql = {};
@@ -139,7 +139,7 @@ class UserStatusAppRepository {
     return userStatusApp;
   }
 
-  async addUserStatusApp (params) {
+  async add (params) {
     const { id_status_app: idStatusApp, id_user: idUser } = params;
 
     const checkDuplicate = await this.checkDuplicate(idStatusApp, idUser);
@@ -180,6 +180,24 @@ class UserStatusAppRepository {
     });
 
     return check.length;
+  }
+
+  async update (id, params) {
+    const { id_status_app: idStatusApp, id_user: idUser } = params;
+
+    const checkDuplicate = await this.checkDuplicateEdit(idStatusApp, idUser);
+
+    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
+
+    try {
+      return await this._model.create({
+        id_user_status_app: uuidv4().toString(),
+        id_status_app: idStatusApp,
+        id_user: idUser
+      });
+    } catch (error) {
+      throw new InvariantError('Add User Status App Failed');
+    }
   }
 }
 

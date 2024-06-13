@@ -123,6 +123,14 @@ function capitalizeWords (str) {
   });
 }
 
+// Function to encode bytes to base64url format
+function base64URLEncode (buffer) {
+  return buffer.toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
 module.exports = {
   time,
   timeHis,
@@ -134,5 +142,6 @@ module.exports = {
   timeDate,
   convertMessage,
   objectToQueryString,
-  capitalizeWords
+  capitalizeWords,
+  base64URLEncode
 };
