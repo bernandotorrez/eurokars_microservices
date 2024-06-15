@@ -1,7 +1,7 @@
 const { checkNull } = require('../utils/globalFunction');
 const jwt = require('jsonwebtoken');
 const AuthenticationError = require('../exceptions/AuthenticationError');
-const CLIENT_ID = process.env.CLIENT_ID;
+const { CLIENT_ID, CLIENT_ID_EMI } = process.env;
 
 function auth (req, res, next) {
   const token = checkNull(req.header('Eurokars-Auth-Token'));
@@ -14,7 +14,7 @@ function auth (req, res, next) {
 
       const { appid } = decoded;
 
-      if (appid !== CLIENT_ID) throw new AuthenticationError('Token is Invalid');
+      if (appid !== CLIENT_ID && appid !== CLIENT_ID_EMI) throw new AuthenticationError('Token is Invalid');
 
       req.user = decoded;
       next();

@@ -137,11 +137,8 @@ class StatusAppRepository {
   }
 
   async update (id, params) {
-    if (id === '') throw new BadRequestError('ID not Provided');
-
-    const checkStatusApp = await this._model.findOne({ where: { id_status_app: id } });
-
-    if (!checkStatusApp) throw new NotFoundError('Status App not found');
+    // Check Data if Exist
+    await this.getOne(id);
 
     const { status_app: statusApp, redirect_url: redirectUrl } = params;
 

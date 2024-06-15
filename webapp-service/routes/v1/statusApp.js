@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  statusAppValidator.createValidator(req.body);
+  statusAppValidator.create(req.body);
 
   const statusApp = await statusAppRepository.add(req.body);
 
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  statusAppValidator.createValidator(req.body);
+  statusAppValidator.create(req.body);
 
   const { id } = req.params;
 

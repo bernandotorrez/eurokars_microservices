@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  userStatusAppValidator.createValidator(req.body);
+  userStatusAppValidator.create(req.body);
 
   const userStatusApp = await userStatusAppRepository.add(req.body);
 
@@ -51,7 +51,9 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  userStatusAppValidator.updateValidator(req.body);
+  userStatusAppValidator.update(req.body);
+
+  console.log(req.body);
 
   const { id } = req.params;
 
@@ -62,8 +64,21 @@ router.put('/:id', async (req, res) => {
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,
-    message: 'Successfully Add User Status App',
+    message: 'Successfully Update User Status App',
     data: userStatusApp
+  });
+});
+
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  await userStatusAppRepository.delete(id);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Delete User Status App',
+    data: id
   });
 });
 

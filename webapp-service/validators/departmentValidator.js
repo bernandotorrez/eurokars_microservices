@@ -6,7 +6,7 @@ const DepartmentSchema = Joi.object({
   department: Joi.string().min(2).max(50).required()
 });
 
-const departmentValidator = (payload) => {
+const create = (payload) => {
   const validationResult = DepartmentSchema.validate(payload, { abortEarly: false });
 
   if (validationResult.error) {
@@ -16,5 +16,5 @@ const departmentValidator = (payload) => {
 };
 
 module.exports = {
-  departmentValidator
+  create
 };

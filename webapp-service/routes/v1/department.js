@@ -12,7 +12,7 @@ const departmentValidator = require('../../validators/departmentValidator');
 router.get('/', async (req, res) => {
   const { search, sort, page } = req.query;
 
-  const departments = await departmentRepository.getDepartments({ search, sort, page });
+  const departments = await departmentRepository.getAll({ search, sort, page });
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
-  const department = await departmentRepository.getDepartment(id);
+  const department = await departmentRepository.getOne(id);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -36,9 +36,9 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  departmentValidator.departmentValidator(req.body);
+  departmentValidator.create(req.body);
 
-  const department = await departmentRepository.addDepartment(req.body);
+  const department = await departmentRepository.add(req.body);
 
   department.id_department = department.null;
 
@@ -51,11 +51,11 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  departmentValidator.departmentValidator(req.body);
+  departmentValidator.create(req.body);
 
   const { id } = req.params;
 
-  await departmentRepository.updateDepartment(id, req.body);
+  await departmentRepository.update(id, req.body);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -68,7 +68,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
-  await departmentRepository.deleteDepartment(id);
+  await departmentRepository.delete(id);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

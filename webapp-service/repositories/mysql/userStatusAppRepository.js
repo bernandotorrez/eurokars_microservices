@@ -168,11 +168,10 @@ class UserStatusAppRepository {
     return check.length;
   }
 
-  async checkDuplicateEdit (id, idStatusApp, idUser) {
+  async checkDuplicateEdit (id, idStatusApp) {
     const check = await this._model.findAll({
       where: {
         id_status_app: idStatusApp,
-        id_user: idUser,
         id_user_status_app: {
           [Op.ne]: id
         }
@@ -183,20 +182,47 @@ class UserStatusAppRepository {
   }
 
   async update (id, params) {
-    const { id_status_app: idStatusApp, id_user: idUser } = params;
+    // Check Data if Exist
+    await this.getOne(id);
 
-    const checkDuplicate = await this.checkDuplicateEdit(idStatusApp, idUser);
+    const { id_status_app: idStatusApp } = params;
 
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
+    const checkDuplicate = await this.checkDuplicateEdit(id, idStatusApp);
+
+    if (checkDuplicate >= 1) throw new ConflictError('User Status App already Created');
 
     try {
-      return await this._model.create({
-        id_user_status_app: uuidv4().toString(),
-        id_status_app: idStatusApp,
-        id_user: idUser
+      return await this._model.update({
+        id_status_app: idStatusApp
+      }, {
+        where: {
+          id_user_status_app: id
+        }
       });
     } catch (error) {
-      throw new InvariantError('Add User Status App Failed');
+      throw new InvariantError('Update User Status App Failed');
+    }
+  }
+
+  async delete (id) {
+    await this.getOne(id);
+
+    const arrayId = id.split(',');
+
+    try {
+      return await this._model.update({
+        status: '0',
+        deleted_at: timeHis()
+      },
+      {
+        where: {
+          id_user_status_app: {
+            [Op.in]: arrayId
+          }
+        }
+      });
+    } catch (error) {
+      throw new InvariantError('Delete User Status App Failed');
     }
   }
 }

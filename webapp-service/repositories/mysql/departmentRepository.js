@@ -17,7 +17,7 @@ class DepartmentRepository {
     this._number = 0;
   }
 
-  async getDepartments ({ search, sort, page }) {
+  async getAll ({ search, sort, page }) {
     const querySql = {};
 
     // sorting
@@ -80,17 +80,17 @@ class DepartmentRepository {
     return data;
   }
 
-  async getDepartment (id = '') {
+  async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID Department Required');
 
-    const department = await this._model.findOne({ where: { id_department: id } });
+    const data = await this._model.findOne({ where: { id_department: id } });
 
-    if (!department) throw new NotFoundError('Department not found');
+    if (!data) throw new NotFoundError('Department not found');
 
-    return department;
+    return data;
   }
 
-  async addDepartment (params) {
+  async add (params) {
     const { department } = params;
 
     const checkDuplicate = await this.checkDuplicate(department);
@@ -130,12 +130,9 @@ class DepartmentRepository {
     return check.length;
   }
 
-  async updateDepartment (id, params) {
-    if (id === '') throw new BadRequestError('ID Department not Provided');
-
-    const checkDepartment = await this._model.findOne({ where: { id_department: id } });
-
-    if (!checkDepartment) throw new NotFoundError('Department not found');
+  async update (id, params) {
+    // Check Data if Exist
+    await this.getOne(id);
 
     const { department } = params;
 
@@ -157,8 +154,9 @@ class DepartmentRepository {
     }
   }
 
-  async deleteDepartment (id) {
-    await this.getDepartment(id);
+  async delete (id) {
+    // Check Data if Exist
+    await this.getOne(id);
 
     const arrayId = id.split(',');
 

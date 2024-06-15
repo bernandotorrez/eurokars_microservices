@@ -7,7 +7,7 @@ const createSchema = Joi.object({
   id_status_app: Joi.string().min(1).max(50).required()
 });
 
-const createValidator = (payload) => {
+const create = (payload) => {
   const validationResult = createSchema.validate(payload, { abortEarly: false });
 
   if (validationResult.error) {
@@ -20,7 +20,7 @@ const updateSchema = Joi.object({
   id_status_app: Joi.string().min(1).max(50).required()
 });
 
-const updateValidator = (payload) => {
+const update = (payload) => {
   const validationResult = updateSchema.validate(payload, { abortEarly: false });
 
   if (validationResult.error) {
@@ -30,6 +30,6 @@ const updateValidator = (payload) => {
 };
 
 module.exports = {
-  createValidator,
-  updateValidator
+  create,
+  update
 };
