@@ -37,11 +37,11 @@ const proxyMiddleware = require('./middleware/proxy');
 const authMiddleware = require('./middleware/auth');
 
 // setiap membuat file router baru, silahkan panggil disini
-const authRouterV1 = require('./routes/v1/authentication');
-const userRouterV1 = require('./routes/v1/user');
-const statusAppRouterV1 = require('./routes/v1/statusApp');
-const departmentRouterV1 = require('./routes/v1/department');
-const userStatusAppRouterV1 = require('./routes/v1/userStatusApp');
+const authRouterV1 = require('./routes/v1/authenticationRoute');
+const userRouterV1 = require('./routes/v1/userRoute');
+const statusAppRouterV1 = require('./routes/v1/statusAppRoute');
+const departmentRouterV1 = require('./routes/v1/departmentRoute');
+const userStatusAppRouterV1 = require('./routes/v1/userStatusAppRoute');
 
 const app = express();
 
