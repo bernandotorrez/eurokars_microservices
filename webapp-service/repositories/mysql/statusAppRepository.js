@@ -4,7 +4,7 @@ const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const ConflictError = require('../../exceptions/ConflictError');
-const { timeHis, capitalEachWord } = require('../../utils/globalFunction');
+const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
 class StatusAppRepository {
@@ -105,7 +105,7 @@ class StatusAppRepository {
     try {
       return await this._model.create({
         id_status_app: uuidv4().toString(),
-        status_app: capitalEachWord(statusApp),
+        status_app: statusApp,
         redirect_url: redirectUrl
       });
     } catch (error) {
@@ -116,7 +116,7 @@ class StatusAppRepository {
   async checkDuplicate (statusApp) {
     const check = await this._model.findAll({
       where: {
-        status_app: capitalEachWord(statusApp)
+        status_app: statusApp
       }
     });
 
@@ -126,7 +126,7 @@ class StatusAppRepository {
   async checkDuplicateEdit (id, statusApp) {
     const check = await this._model.findAll({
       where: {
-        status_app: capitalEachWord(statusApp),
+        status_app: statusApp,
         id_status_app: {
           [Op.ne]: id
         }
@@ -148,7 +148,7 @@ class StatusAppRepository {
 
     try {
       return await this._model.update({
-        status_app: capitalEachWord(statusApp),
+        status_app: statusApp,
         redirect_url: redirectUrl,
         updated_at: timeHis()
       }, {

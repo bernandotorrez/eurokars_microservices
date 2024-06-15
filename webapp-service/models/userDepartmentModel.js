@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         keyType: 'string',
         as: 'department',
-        scope: { status: 1 }
+        scope: { status: '1' }
       });
 
       UserDepartment.belongsTo(models.User, {
@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         keyType: 'string',
         as: 'user',
-        scope: { status: 1 }
+        scope: { status: '1' }
       });
     }
   };

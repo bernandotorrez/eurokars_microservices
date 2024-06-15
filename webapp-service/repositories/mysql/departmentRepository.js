@@ -4,7 +4,7 @@ const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const ConflictError = require('../../exceptions/ConflictError');
-const { timeHis, capitalEachWord } = require('../../utils/globalFunction');
+const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
 class DepartmentRepository {
@@ -100,7 +100,7 @@ class DepartmentRepository {
     try {
       return await this._model.create({
         id_department: uuidv4().toString(),
-        department: capitalEachWord(department)
+        department
       });
     } catch (error) {
       throw new InvariantError('Add Department Failed');
@@ -110,7 +110,7 @@ class DepartmentRepository {
   async checkDuplicate (department) {
     const check = await this._model.findAll({
       where: {
-        department: capitalEachWord(department)
+        department
       }
     });
 
@@ -120,7 +120,7 @@ class DepartmentRepository {
   async checkDuplicateEdit (id, department) {
     const check = await this._model.findAll({
       where: {
-        department: capitalEachWord(department),
+        department,
         id_department: {
           [Op.ne]: id
         }
@@ -142,7 +142,7 @@ class DepartmentRepository {
 
     try {
       return await this._model.update({
-        department: capitalEachWord(department),
+        department,
         updated_at: timeHis()
       }, {
         where: {

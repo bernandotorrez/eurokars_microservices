@@ -23,6 +23,7 @@ const webAppUserRouterV1 = require('./routes/v1/webAppService/userService');
 const statusAppUserRouterV1 = require('./routes/v1/webAppService/statusAppService');
 const departmentUserRouterV1 = require('./routes/v1/webAppService/departmentService');
 const userStatusAppRouterV1 = require('./routes/v1/webAppService/userStatusAppService');
+const userDepartmentRouterV1 = require('./routes/v1/webAppService/userDepartmentService');
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use('/api-gateway/v1/webapp/user', webAppUserRouterV1);
 app.use('/api-gateway/v1/webapp/status-app', statusAppUserRouterV1);
 app.use('/api-gateway/v1/webapp/department', departmentUserRouterV1);
 app.use('/api-gateway/v1/webapp/user-status-app', userStatusAppRouterV1);
+app.use('/api-gateway/v1/webapp/user-department', userDepartmentRouterV1);
 
 // error handler
 process.on('uncaughtException', (ex) => {
