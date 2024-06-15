@@ -7,7 +7,7 @@ const StatusAppSchema = Joi.object({
   redirect_url: Joi.string().min(3).max(200).required()
 });
 
-const statusAppValidator = (payload) => {
+const createValidator = (payload) => {
   const validationResult = StatusAppSchema.validate(payload, { abortEarly: false });
 
   if (validationResult.error) {
@@ -17,5 +17,5 @@ const statusAppValidator = (payload) => {
 };
 
 module.exports = {
-  statusAppValidator
+  createValidator
 };

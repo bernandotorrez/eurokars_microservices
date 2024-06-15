@@ -12,7 +12,7 @@ const statusAppValidator = require('../../validators/statusAppValidator');
 router.get('/', async (req, res) => {
   const { search, sort, page } = req.query;
 
-  const statusApps = await statusAppRepository.getStatusApps({ search, sort, page });
+  const statusApps = await statusAppRepository.getAll({ search, sort, page });
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
-  const statusApps = await statusAppRepository.getStatusApp(id);
+  const statusApps = await statusAppRepository.getOne(id);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -36,9 +36,9 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  statusAppValidator.statusAppValidator(req.body);
+  statusAppValidator.createValidator(req.body);
 
-  const statusApp = await statusAppRepository.addStatusApp(req.body);
+  const statusApp = await statusAppRepository.add(req.body);
 
   statusApp.id_status_app = statusApp.null;
 
@@ -51,11 +51,11 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  statusAppValidator.statusAppValidator(req.body);
+  statusAppValidator.createValidator(req.body);
 
   const { id } = req.params;
 
-  await statusAppRepository.updateStatusApp(id, req.body);
+  await statusAppRepository.update(id, req.body);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -68,7 +68,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
-  await statusAppRepository.deleteStatusApp(id);
+  await statusAppRepository.delete(id);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

@@ -17,7 +17,7 @@ class StatusAppRepository {
     this._number = 0;
   }
 
-  async getStatusApps ({ search, sort, page }) {
+  async getAll ({ search, sort, page }) {
     const querySql = {};
 
     // sorting
@@ -85,17 +85,17 @@ class StatusAppRepository {
     return data;
   }
 
-  async getStatusApp (id = '') {
+  async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID Status App Required');
 
-    const statusApp = await this._model.findOne({ where: { id_status_app: id } });
+    const data = await this._model.findOne({ where: { id_status_app: id } });
 
-    if (!statusApp) throw new NotFoundError('Status App not found');
+    if (!data) throw new NotFoundError('Status App not found');
 
-    return statusApp;
+    return data;
   }
 
-  async addStatusApp (params) {
+  async add (params) {
     const { status_app: statusApp, redirect_url: redirectUrl } = params;
 
     const checkDuplicate = await this.checkDuplicate(statusApp);
@@ -136,7 +136,7 @@ class StatusAppRepository {
     return check.length;
   }
 
-  async updateStatusApp (id, params) {
+  async update (id, params) {
     if (id === '') throw new BadRequestError('ID not Provided');
 
     const checkStatusApp = await this._model.findOne({ where: { id_status_app: id } });
@@ -164,8 +164,8 @@ class StatusAppRepository {
     }
   }
 
-  async deleteStatusApp (id) {
-    await this.getStatusApp(id);
+  async delete (id) {
+    await this.getOne(id);
 
     const arrayId = id.split(',');
 
