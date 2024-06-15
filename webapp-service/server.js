@@ -69,9 +69,9 @@ if (!process.env.JWT_PRIVATE_KEY) {
 // setiap ada penambahan Router, inisialisasi index nya disini
 app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service') }), authRouterV1);
 app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') }), authMiddleware], userRouterV1);
-app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('statusApp-service') }), authMiddleware], statusAppRouterV1);
+app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-service') }), authMiddleware], statusAppRouterV1);
 app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') }), authMiddleware], departmentRouterV1);
-app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('userStatusApp-service') }), authMiddleware], userStatusAppRouterV1);
+app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service') }), authMiddleware], userStatusAppRouterV1);
 
 // Middleware Flow : proxyMiddleware -> rateLimit -> zipkinTracer -> authMiddleware
 
