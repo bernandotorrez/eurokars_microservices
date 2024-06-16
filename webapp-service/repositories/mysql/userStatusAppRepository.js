@@ -150,7 +150,8 @@ class UserStatusAppRepository {
       return await this._model.create({
         id_user_status_app: uuidv4().toString(),
         id_status_app: idStatusApp,
-        id_user: idUser
+        id_user: idUser,
+        created_at: timeHis()
       });
     } catch (error) {
       throw new InvariantError('Add User Status App Failed');
@@ -193,7 +194,8 @@ class UserStatusAppRepository {
 
     try {
       return await this._model.update({
-        id_status_app: idStatusApp
+        id_status_app: idStatusApp,
+        updated_at: timeHis()
       }, {
         where: {
           id_user_status_app: id

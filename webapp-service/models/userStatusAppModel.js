@@ -44,6 +44,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       type: DataTypes.STRING(50)
     },
+    created_at: {
+      allowNull: true,
+      type: DataTypes.DATE
+    },
+    updated_at: {
+      allowNull: true,
+      type: DataTypes.DATE
+    },
     deleted_at: {
       type: DataTypes.DATE,
       allowNull: true
@@ -61,6 +69,7 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true,
+    timestamps: false,
     defaultScope: {
       where: {
         status: '1'

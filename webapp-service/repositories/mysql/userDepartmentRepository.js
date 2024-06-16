@@ -145,7 +145,8 @@ class UserStatusAppRepository {
       return await this._model.create({
         id_user_department: uuidv4().toString(),
         id_department: idDepartment,
-        id_user: idUser
+        id_user: idUser,
+        created_at: timeHis()
       });
     } catch (error) {
       throw new InvariantError('Add User Department Failed');
@@ -188,7 +189,8 @@ class UserStatusAppRepository {
 
     try {
       return await this._model.update({
-        id_department: idDepartment
+        id_department: idDepartment,
+        updated_at: timeHis()
       }, {
         where: {
           id_user_department: id

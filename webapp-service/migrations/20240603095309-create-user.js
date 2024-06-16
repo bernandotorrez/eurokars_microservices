@@ -40,6 +40,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE
       },
+      logout_uri: {
+        allowNull: false,
+        type: Sequelize.TEXT
+      },
       created_at: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),

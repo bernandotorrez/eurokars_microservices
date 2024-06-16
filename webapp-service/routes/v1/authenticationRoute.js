@@ -169,16 +169,17 @@ router.get('/sso/token', (req, res) => {
       ipaddr: ipAddr
     } = decodedToken;
 
+    const logoutUri = `${AUTHORITY}/oauth2/v2.0/logout?post_logout_redirect_uri=${POST_LOGOUT_REDIRECT_URI}`;
+
     await userRepository.registerSSO({
       uniqueId,
       mail,
       givenName,
       surname,
       displayName,
-      ipAddr
+      ipAddr,
+      logoutUri
     });
-
-    const logoutUri = `${AUTHORITY}/oauth2/v2.0/logout?post_logout_redirect_uri=${POST_LOGOUT_REDIRECT_URI}`;
 
     const data = {
       username: account.username,

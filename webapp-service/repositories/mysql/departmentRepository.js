@@ -100,7 +100,8 @@ class DepartmentRepository {
     try {
       return await this._model.create({
         id_department: uuidv4().toString(),
-        department
+        department,
+        created_at: timeHis()
       });
     } catch (error) {
       throw new InvariantError('Add Department Failed');

@@ -106,7 +106,8 @@ class StatusAppRepository {
       return await this._model.create({
         id_status_app: uuidv4().toString(),
         status_app: statusApp,
-        redirect_url: redirectUrl
+        redirect_url: redirectUrl,
+        created_at: timeHis()
       });
     } catch (error) {
       throw new InvariantError('Add Status App Failed');
