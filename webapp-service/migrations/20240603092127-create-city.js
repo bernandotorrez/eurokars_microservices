@@ -60,8 +60,8 @@ module.exports = {
         table: 'province',
         field: 'id_province'
       },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION'
     });
   },
 

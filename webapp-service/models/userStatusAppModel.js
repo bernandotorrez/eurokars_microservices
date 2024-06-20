@@ -13,8 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       UserStatusApp.belongsTo(models.StatusApp, {
         foreignKey: 'id_status_app',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'status_app',
         scope: { status: '1' }
@@ -22,8 +22,8 @@ module.exports = (sequelize, DataTypes) => {
 
       UserStatusApp.belongsTo(models.User, {
         foreignKey: 'id_user',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'user',
         scope: { status: '1' }

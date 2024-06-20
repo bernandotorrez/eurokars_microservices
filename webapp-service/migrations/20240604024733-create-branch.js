@@ -77,8 +77,8 @@ module.exports = {
         table: 'city',
         field: 'id_city'
       },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION'
     });
   },
   down: async (queryInterface, Sequelize) => {

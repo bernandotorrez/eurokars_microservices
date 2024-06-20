@@ -7,6 +7,8 @@ const apiAdapter = require('../../../utils/apiAdapter.js');
 const { URL_WEBAPP_SERVICE } = process.env;
 const api = apiAdapter(URL_WEBAPP_SERVICE);
 
+const route = 'user-department';
+
 router.get('/', async (req, res) => {
   const headers = {
     headers: {
@@ -14,7 +16,7 @@ router.get('/', async (req, res) => {
     }
   };
 
-  const data = await api.get(`/v1/user-department?${req.url.split('?')[1]}`, headers);
+  const data = await api.get(`/v1/${route}?${req.url.split('?')[1]}`, headers);
   return res.json(data.data);
 });
 
@@ -27,7 +29,7 @@ router.get('/:id', async (req, res) => {
   };
 
   const { id } = req.params;
-  const data = await api.get(`/v1/user-department/${id}`, headers);
+  const data = await api.get(`/v1/${route}/${id}`, headers);
   return res.json(data.data);
 });
 
@@ -38,7 +40,7 @@ router.post('/', async (req, res) => {
     }
   };
 
-  const data = await api.post('/v1/user-department', req.body, headers);
+  const data = await api.post(`/v1/${route}`, req.body, headers);
   return res.json(data.data);
 });
 
@@ -51,7 +53,7 @@ router.put('/:id', async (req, res) => {
 
   const { id } = req.params;
 
-  const data = await api.put(`/v1/user-department/${id}`, req.body, headers);
+  const data = await api.put(`/v1/${route}/${id}`, req.body, headers);
   return res.json(data.data);
 });
 
@@ -64,7 +66,7 @@ router.delete('/:id', async (req, res) => {
 
   const { id } = req.params;
 
-  const data = await api.delete(`/v1/user-department/${id}`, headers);
+  const data = await api.delete(`/v1/${route}/${id}`, headers);
   return res.json(data.data);
 });
 

@@ -60,8 +60,8 @@ module.exports = {
         table: 'vehicle_type',
         field: 'id_vehicle_type'
       },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION'
     });
   },
 

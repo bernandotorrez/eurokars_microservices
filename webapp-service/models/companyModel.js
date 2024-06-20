@@ -25,7 +25,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     company_short: {
       allowNull: false,
-      type: DataTypes.STRING(200)
+      type: DataTypes.CHAR(3)
+    },
+    created_at: {
+      allowNull: true,
+      type: DataTypes.DATE
+    },
+    updated_at: {
+      allowNull: true,
+      type: DataTypes.DATE
     },
     deleted_at: {
       allowNull: true,
@@ -44,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true,
+    timestamps: false,
     defaultScope: {
       where: {
         status: '1'

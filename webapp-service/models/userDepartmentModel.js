@@ -13,8 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       UserDepartment.belongsTo(models.Department, {
         foreignKey: 'id_department',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'department',
         scope: { status: '1' }
@@ -22,8 +22,8 @@ module.exports = (sequelize, DataTypes) => {
 
       UserDepartment.belongsTo(models.User, {
         foreignKey: 'id_user',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'user',
         scope: { status: '1' }

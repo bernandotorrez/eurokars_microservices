@@ -7,7 +7,7 @@ const apiAdapter = require('../../../utils/apiAdapter.js');
 const { URL_WEBAPP_SERVICE } = process.env;
 const api = apiAdapter(URL_WEBAPP_SERVICE);
 
-const route = 'user-status-app';
+const route = 'company';
 
 router.get('/', async (req, res) => {
   const headers = {

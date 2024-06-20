@@ -43,6 +43,7 @@ const statusAppRouterV1 = require('./routes/v1/statusAppRoute');
 const departmentRouterV1 = require('./routes/v1/departmentRoute');
 const userStatusAppRouterV1 = require('./routes/v1/userStatusAppRoute');
 const userDepartmentRouteV1 = require('./routes/v1/userDepartmentRoute');
+const companyRouteV1 = require('./routes/v1/companyRoute');
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-
 app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') }), authMiddleware], departmentRouterV1);
 app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service') }), authMiddleware], userStatusAppRouterV1);
 app.use('/v1/user-department', [expressMiddleware({ tracer: zipkinTracer('user.department-service') }), authMiddleware], userDepartmentRouteV1);
+app.use('/v1/company', [expressMiddleware({ tracer: zipkinTracer('company-service') }), authMiddleware], companyRouteV1);
 
 // Middleware Flow : proxyMiddleware -> rateLimit -> zipkinTracer -> authMiddleware
 

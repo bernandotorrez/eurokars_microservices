@@ -13,8 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       User.hasMany(models.UserStatusApp, {
         foreignKey: 'id_user',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'user_status_app',
         scope: { status: '1' }
@@ -22,8 +22,8 @@ module.exports = (sequelize, DataTypes) => {
 
       User.hasMany(models.UserDepartment, {
         foreignKey: 'id_user',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
+        onDelete: 'NO ACTION',
+        onUpdate: 'NO ACTION',
         keyType: 'string',
         as: 'user_department',
         scope: { status: '1' }

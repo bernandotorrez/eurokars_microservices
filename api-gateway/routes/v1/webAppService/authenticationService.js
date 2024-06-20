@@ -7,6 +7,8 @@ const apiAdapter = require('../../../utils/apiAdapter.js');
 const { URL_WEBAPP_SERVICE } = process.env;
 const api = apiAdapter(URL_WEBAPP_SERVICE);
 
+const route = 'auth';
+
 router.put('/refresh-token', async (req, res) => {
   const accessToken = req.header('Eurokars-Auth-Refresh-Token');
   const headers = {
@@ -15,7 +17,7 @@ router.put('/refresh-token', async (req, res) => {
     }
   };
 
-  const user = await api.put('/v1/auth/refresh-token', {}, headers);
+  const user = await api.put(`/v1/${route}/refresh-token`, {}, headers);
 
   const accessTokenResponse = user.headers['eurokars-auth-token'];
   res.header('Eurokars-Auth-Token', accessTokenResponse);
@@ -24,7 +26,7 @@ router.put('/refresh-token', async (req, res) => {
 });
 
 router.get('/login/sso', async (req, res) => {
-  const user = await api.get('/v1/auth/login/sso');
+  const user = await api.get(`/v1/${route}/login/sso`);
 
   return res.json(user.data);
 });
@@ -32,7 +34,7 @@ router.get('/login/sso', async (req, res) => {
 router.get('/sso/redirect', async (req, res) => {
   const { code } = req.query;
 
-  const user = await api.get(`/v1/auth/sso/redirect?code=${code}`);
+  const user = await api.get(`/v1/${route}/sso/redirect?code=${code}`);
 
   const accessToken = user.headers['eurokars-auth-token'];
   const refreshToken = user.headers['eurokars-auth-refresh-token'];
@@ -45,7 +47,7 @@ router.get('/sso/redirect', async (req, res) => {
 router.get('/sso/token', async (req, res) => {
   const { code } = req.query;
 
-  const user = await api.get(`/v1/auth/sso/token?code=${code}`);
+  const user = await api.get(`/v1/${route}/sso/token?code=${code}`);
 
   const accessToken = user.headers['eurokars-auth-token'];
   const refreshToken = user.headers['eurokars-auth-refresh-token'];
@@ -56,7 +58,7 @@ router.get('/sso/token', async (req, res) => {
 });
 
 router.get('/login/sso/emi', async (req, res) => {
-  const user = await api.get('/v1/auth/login/sso/emi');
+  const user = await api.get(`/v1/${route}/login/sso/emi`);
 
   return res.json(user.data);
 });
@@ -64,7 +66,7 @@ router.get('/login/sso/emi', async (req, res) => {
 router.get('/sso/token/emi', async (req, res) => {
   const { code } = req.query;
 
-  const user = await api.get(`/v1/auth/sso/token/emi?code=${code}`);
+  const user = await api.get(`/v1/${route}/sso/token/emi?code=${code}`);
 
   const accessToken = user.headers['eurokars-auth-token'];
   const refreshToken = user.headers['eurokars-auth-refresh-token'];

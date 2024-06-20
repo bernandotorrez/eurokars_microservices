@@ -47,8 +47,8 @@ module.exports = {
         table: 'user',
         field: 'id_user'
       },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION'
     });
 
     await queryInterface.addConstraint(tableName, {
@@ -59,8 +59,8 @@ module.exports = {
         table: 'status_app',
         field: 'id_status_app'
       },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION'
     });
   },
   down: async (queryInterface, Sequelize) => {
