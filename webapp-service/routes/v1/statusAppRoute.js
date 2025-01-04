@@ -1,7 +1,8 @@
 const express = require('express');
 require('express-async-errors');
 const router = express.Router();
-const httpStatus = require('http-status');
+const httpStatus = require('http-status').status;
+const { getuserId } = require('../../utils/tokenManager');
 
 // Repositories
 const statusAppRepository = require('../../repositories/mysql/statusAppRepository');
@@ -38,9 +39,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   statusAppValidator.create(req.body);
 
-  const statusApp = await statusAppRepository.add(req.body);
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
 
-  statusApp.id_status_app = statusApp.null;
+  const statusApp = await statusAppRepository.add(oid, req.body);
+
+  statusApp.status_app_id = statusApp.null;
 
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
@@ -51,11 +54,13 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  statusAppValidator.create(req.body);
+  statusAppValidator.update(req.body);
 
   const { id } = req.params;
 
-  await statusAppRepository.update(id, req.body);
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  await statusAppRepository.update(id, oid, req.body);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,
@@ -68,7 +73,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
-  await statusAppRepository.delete(id);
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  await statusAppRepository.delete(id, oid);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

@@ -1,7 +1,7 @@
 const RateLimit = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis');
 const redis = require('redis');
-const httpStatus = require('http-status');
+const httpStatus = require('http-status').status;
 const limiter = new RateLimit({
   store: new RedisStore({
     client: redis.createClient({

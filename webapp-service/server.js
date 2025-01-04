@@ -8,9 +8,13 @@ const bearerToken = require('express-bearer-token');
 const appRoot = require('app-root-path');
 const cors = require('cors');
 const compression = require('compression');
-const httpStatus = require('http-status');
+const httpStatus = require('http-status').status;
+const isJson = require('is-json');
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
 const { timeDate, logTime } = require('./utils/globalFunction');
-const rateLimit = require('./utils/rateLimiter');
+// const rateLimit = require('./utils/rateLimiter');
 const { Tracer, ExplicitContext, BatchRecorder, jsonEncoder: { JSON_V2 } } = require('zipkin');
 const { HttpLogger } = require('zipkin-transport-http');
 const { expressMiddleware } = require('zipkin-instrumentation-express');
@@ -21,7 +25,7 @@ const zipkinTracer = (serviceName) => {
     ctxImpl: new ExplicitContext(),
     recorder: new BatchRecorder({
       logger: new HttpLogger({
-        endpoint: 'http://egi-javaconfigserver.eurokars.co.id:9411/api/v2/spans',
+        endpoint: process.env.URL_ZIPKIN,
         jsonEncoder: JSON_V2
       })
     }),
@@ -30,23 +34,54 @@ const zipkinTracer = (serviceName) => {
 
   return tracer;
 };
-// const jwt = require('jsonwebtoken');
 
-// Middleware
+// List all Middlewares
 const proxyMiddleware = require('./middleware/proxy');
 const authMiddleware = require('./middleware/auth');
+const allowedMethodMiddleware = require('./middleware/allowedMethods');
 
-// setiap membuat file router baru, silahkan panggil disini
+// List all File Routes
 const authRouterV1 = require('./routes/v1/authenticationRoute');
 const userRouterV1 = require('./routes/v1/userRoute');
 const statusAppRouterV1 = require('./routes/v1/statusAppRoute');
 const departmentRouterV1 = require('./routes/v1/departmentRoute');
 const userStatusAppRouterV1 = require('./routes/v1/userStatusAppRoute');
-const userDepartmentRouteV1 = require('./routes/v1/userDepartmentRoute');
 const companyRouteV1 = require('./routes/v1/companyRoute');
+const provinceRouteV1 = require('./routes/v1/provinceRoute');
+const cityRouteV1 = require('./routes/v1/cityRoute');
+const branchRouteV1 = require('./routes/v1/branchRoute');
+const bankRouteV1 = require('./routes/v1/bankRoute');
+const bankBeneficiaryRouteV1 = require('./routes/v1/bankBeneficiaryRoute');
+const brandRouteV1 = require('./routes/v1/brandRoute');
+const currencyRouteV1 = require('./routes/v1/currencyRoute');
+const divisionRouteV1 = require('./routes/v1/divisionRoute');
+const companyBankBeneficiaryRouteV1 = require('./routes/v1/companyBankBeneficiaryRoute');
+const vendorBankBeneficiaryRouteV1 = require('./routes/v1/vendorBankBeneficiaryRoute');
+const listCompanyBankRouteV1 = require('./routes/v1/listCompanyBankRoute');
+const vendorRouteV1 = require('./routes/v1/vendorRoute');
+const vendorCompanyRouteV1 = require('./routes/v1/vendorCompanyRoute');
+const vendorCompanyDepartmentRouteV1 = require('./routes/v1/vendorCompanyDepartmentRoute');
+const headerNavigationmentRouteV1 = require('./routes/v1/headerNavigationRoute');
+const userDivisionRouteV1 = require('./routes/v1/userDivisionRoute');
+const counterNumberRouteV1 = require('./routes/v1/counterNumberRoute');
+const businessLineRouteV1 = require('./routes/v1/businessLineRoute');
+const subBusinessLineOneRouteV1 = require('./routes/v1/subBusinessLineOneRoute');
+const subBusinessLineTwoRouteV1 = require('./routes/v1/subBusinessLineTwoRoute');
+const companyDetailRouteV1 = require('./routes/v1/companyDetailRoute');
+const taxRouteV1 = require('./routes/v1/taxRoute');
+const taxDetailRouteV1 = require('./routes/v1/taxDetailRoute');
+const userCompanyDetailRouteV1 = require('./routes/v1/userCompanyDetailRoute');
+const roleRouteV1 = require('./routes/v1/roleRoute');
+const menuGroupRouteV1 = require('./routes/v1/menuGroupRoute');
+const menuMenuGroupRouteV1 = require('./routes/v1/menuMenuGroupRoute');
+const categoryRfaRouteV1 = require('./routes/v1/categoryRfaRoute');
+const userMenuGroupRouteV1 = require('./routes/v1/userMenuGroupRoute');
+const userRoleRouteV1 = require('./routes/v1/userRoleRoute');
+const rolePermissionRouteV1 = require('./routes/v1/rolePermissionRoute');
 
 const app = express();
 
+// List all Pipeline / Middleware
 app.use(compression());
 app.use(logger('dev'));
 app.use(express.json());
@@ -55,31 +90,58 @@ app.use(express.urlencoded({
 }));
 app.use(bearerToken());
 app.use(cors());
-app.use([proxyMiddleware, rateLimit]);
+app.use([proxyMiddleware, allowedMethodMiddleware]);
+// app.use([allowedMethodMiddleware]);
+app.use(helmet());
 
-// wajib saat naik ke production
-if (process.env.NODE_ENV === 'production') {
-  app.use(helmet());
-}
-
-// Check env JWT_PRIVATE_KEY
+// Check JWT_PRIVATE_KEY
 if (!process.env.JWT_PRIVATE_KEY) {
   console.error('FATAL ERROR : jwtPrivateKey not set');
   process.exit(1);
 }
 
-// setiap ada penambahan Router, inisialisasi index nya disini
+// List all Routes
 app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service') }), authRouterV1);
-app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') }), authMiddleware], userRouterV1);
-app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-service') }), authMiddleware], statusAppRouterV1);
-app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') }), authMiddleware], departmentRouterV1);
-app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service') }), authMiddleware], userStatusAppRouterV1);
-app.use('/v1/user-department', [expressMiddleware({ tracer: zipkinTracer('user.department-service') }), authMiddleware], userDepartmentRouteV1);
-app.use('/v1/company', [expressMiddleware({ tracer: zipkinTracer('company-service') }), authMiddleware], companyRouteV1);
+app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') })], authMiddleware, userRouterV1);
+app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-service') })], authMiddleware, statusAppRouterV1);
+app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') })], authMiddleware, departmentRouterV1);
+app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service') })], authMiddleware, userStatusAppRouterV1);
+app.use('/v1/company', [expressMiddleware({ tracer: zipkinTracer('company-service') })], authMiddleware, companyRouteV1);
+app.use('/v1/province', [expressMiddleware({ tracer: zipkinTracer('province-service') })], authMiddleware, provinceRouteV1);
+app.use('/v1/city', [expressMiddleware({ tracer: zipkinTracer('city-service') })], authMiddleware, cityRouteV1);
+app.use('/v1/branch', [expressMiddleware({ tracer: zipkinTracer('branch-service') })], authMiddleware, branchRouteV1);
+app.use('/v1/bank', [expressMiddleware({ tracer: zipkinTracer('bank-service') })], authMiddleware, bankRouteV1);
+app.use('/v1/bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('bank.beneficiary-service') })], authMiddleware, bankBeneficiaryRouteV1);
+app.use('/v1/brand', [expressMiddleware({ tracer: zipkinTracer('brand-service') })], authMiddleware, brandRouteV1);
+app.use('/v1/currency', [expressMiddleware({ tracer: zipkinTracer('currency-service') })], authMiddleware, currencyRouteV1);
+app.use('/v1/division', [expressMiddleware({ tracer: zipkinTracer('division-service') })], authMiddleware, divisionRouteV1);
+app.use('/v1/company-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('company.bank.beneficiary-service') })], authMiddleware, companyBankBeneficiaryRouteV1);
+app.use('/v1/vendor-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('vendor.bank.beneficiary-service') })], authMiddleware, vendorBankBeneficiaryRouteV1);
+app.use('/v1/list-company-bank', [expressMiddleware({ tracer: zipkinTracer('list.company.bank-service') })], authMiddleware, listCompanyBankRouteV1);
+app.use('/v1/vendor', [expressMiddleware({ tracer: zipkinTracer('vendor-service') })], authMiddleware, vendorRouteV1);
+app.use('/v1/vendor-company', [expressMiddleware({ tracer: zipkinTracer('vendor.company-service') })], authMiddleware, vendorCompanyRouteV1);
+app.use('/v1/vendor-company-department', [expressMiddleware({ tracer: zipkinTracer('vendor.company.department-service') })], authMiddleware, vendorCompanyDepartmentRouteV1);
+app.use('/v1/header-navigation', [expressMiddleware({ tracer: zipkinTracer('header.navigation-service') })], authMiddleware, headerNavigationmentRouteV1);
+app.use('/v1/user-division', [expressMiddleware({ tracer: zipkinTracer('user.division-service') })], authMiddleware, userDivisionRouteV1);
+app.use('/v1/counter-number', [expressMiddleware({ tracer: zipkinTracer('counter.number-service') })], authMiddleware, counterNumberRouteV1);
+app.use('/v1/business-line', [expressMiddleware({ tracer: zipkinTracer('business.line-service') })], authMiddleware, businessLineRouteV1);
+app.use('/v1/sub-business-line-one', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.one-service') })], authMiddleware, subBusinessLineOneRouteV1);
+app.use('/v1/sub-business-line-two', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.two-service') })], authMiddleware, subBusinessLineTwoRouteV1);
+app.use('/v1/company-detail', [expressMiddleware({ tracer: zipkinTracer('company.detail-service') })], authMiddleware, companyDetailRouteV1);
+app.use('/v1/tax', [expressMiddleware({ tracer: zipkinTracer('tax-service') })], authMiddleware, taxRouteV1);
+app.use('/v1/tax-detail', [expressMiddleware({ tracer: zipkinTracer('tax.detail-service') })], authMiddleware, taxDetailRouteV1);
+app.use('/v1/user-company-detail', [expressMiddleware({ tracer: zipkinTracer('user.company.detail-service') })], authMiddleware, userCompanyDetailRouteV1);
+app.use('/v1/role', [expressMiddleware({ tracer: zipkinTracer('role-service') })], authMiddleware, roleRouteV1);
+app.use('/v1/menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.group-service') })], authMiddleware, menuGroupRouteV1);
+app.use('/v1/menu-menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.menu.group-service') })], authMiddleware, menuMenuGroupRouteV1);
+app.use('/v1/category-rfa', [expressMiddleware({ tracer: zipkinTracer('category.rfa-service') })], authMiddleware, categoryRfaRouteV1);
+app.use('/v1/user-menu-group', [expressMiddleware({ tracer: zipkinTracer('user.menu.group-service') })], authMiddleware, userMenuGroupRouteV1);
+app.use('/v1/user-role', [expressMiddleware({ tracer: zipkinTracer('user.role-service') })], authMiddleware, userRoleRouteV1);
+app.use('/v1/role-permission', [expressMiddleware({ tracer: zipkinTracer('role.permission-service') })], authMiddleware, rolePermissionRouteV1);
 
-// Middleware Flow : proxyMiddleware -> rateLimit -> zipkinTracer -> authMiddleware
+// Middleware Flow : proxyMiddleware -> allowedMethodMiddleware -> zipkinTracer -> authMiddleware
 
-// error handler
+// Error Handler
 process.on('uncaughtException', (ex) => {
   const logDate = timeDate();
   const fileName = `uncaughtException ${logDate}.log`;
@@ -148,7 +210,6 @@ app.use(function (req, res, next) {
 });
 
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env').trim() === 'development' ? err : {};
 
@@ -178,13 +239,26 @@ app.use(function (err, req, res, next) {
     timestamp: logTime()
   });
 
-  // handle bad request
+  // Error Handler
   if (err.statusCode === 400) {
+    let errorMessage = '';
+
+    if (isJson(err.message)) {
+      errorMessage = JSON.parse(err.message);
+    } else {
+      errorMessage = [
+        {
+          message: err.message,
+          field: null
+        }
+      ];
+    }
+
     res.status(err.statusCode).json({
       code: err.statusCode,
       success: false,
       message: 'Bad Request',
-      data: JSON.parse(err.message)
+      data: errorMessage
     });
   } else {
     res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -196,8 +270,19 @@ app.use(function (err, req, res, next) {
   }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log('listening on port ' + process.env.PORT);
-});
+if (process.env.IS_USE_HTTPS === 'true') {
+  console.log('Server is using HTTPS, please provide .key and .crt for SSL');
+  https.createServer({
+    key: fs.readFileSync(path.resolve(__dirname, 'development-epp.eurokars.co.id.key')).toString(),
+    cert: fs.readFileSync(path.resolve(__dirname, 'development-app.eurokars.co.id.crt')).toString()
+  }, app).listen(process.env.PORT, () => {
+    console.log('listening on port ' + process.env.PORT);
+  });
+} else {
+  console.log('Server is using HTTP');
+  app.listen(process.env.PORT, () => {
+    console.log('listening on port ' + process.env.PORT);
+  });
+}
 
 module.exports = app;

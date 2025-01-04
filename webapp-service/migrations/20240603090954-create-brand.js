@@ -1,7 +1,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-const tableName = 'brand';
+const tableName = 'ms_brand';
 module.exports = {
   async up (queryInterface, Sequelize) {
     /**
@@ -11,57 +11,53 @@ module.exports = {
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
     await queryInterface.createTable(tableName, {
-      id_brand: {
+      brand_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      id_vehicle_type: {
+      brand_name: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      brand: {
+      created_by: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      created_at: {
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
     });
 
     // Index
     await queryInterface.addIndex(tableName, {
-      fields: ['brand'],
-      name: 'idx_brand'
+      fields: ['brand_name'],
+      name: 'idx_brand_name'
     });
 
-    // Constraint
-    await queryInterface.addConstraint(tableName, {
-      fields: ['id_vehicle_type'],
-      type: 'foreign key',
-      name: 'fk_brand_vehicle_type',
-      references: {
-        table: 'vehicle_type',
-        field: 'id_vehicle_type'
-      },
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION'
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_brand'
     });
   },
 

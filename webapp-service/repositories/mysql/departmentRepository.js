@@ -1,6 +1,6 @@
-const { Department } = require('../../models');
+const { Department, sequelize } = require('../../models');
 const { Op } = require('sequelize');
-const InvariantError = require('../../exceptions/InvariantError');
+const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const ConflictError = require('../../exceptions/ConflictError');
@@ -15,58 +15,72 @@ class DepartmentRepository {
     this._sort = 'ASC';
     this._limit = 5;
     this._number = 0;
+    this._searchFields = [this._primaryKey, 'department_name', 'department_code', 'created_date'];
   }
 
   async getAll ({ search, sort, page }) {
     const querySql = {};
 
-    // sorting
-    if (sort !== '' && typeof sort !== 'undefined') {
-      const { value, sorting } = sort;
-      const arrayQuerySort = [this._sortBy, this._sort];
+    // Sorting logic
+    if (sort && sort.value && sort.sorting) {
+      const sortField = sort.value;
+      const sortDirection = sort.sorting.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-      if (value !== '' && typeof value !== 'undefined') {
-        arrayQuerySort[0] = value;
+      if (this._searchFields.includes(sortField)) {
+        // Handle sorting with related fields
+        if (sortField.startsWith('$')) {
+          const cleanField = sortField.replace(/\$/g, '').split('.'); // Remove '$' and split by '.'
+          querySql.order = [
+            [...cleanField, sortDirection]
+          ];
+        } else {
+          // Handle direct sorting on the main model
+          querySql.order = [
+            [sortField, sortDirection]
+          ];
+        }
+      } else {
+        // Fallback to default sorting
+        querySql.order = [
+          [this._primaryKey, this._sort]
+        ];
       }
-
-      if (sorting !== '' && typeof sorting !== 'undefined') {
-        arrayQuerySort[1] = sorting;
-      }
-
-      querySql.order = [[arrayQuerySort[0], arrayQuerySort[1]]];
     } else {
-      querySql.order = [[this._primaryKey, this._sort]];
+      // Default sorting
+      querySql.order = [
+        [this._primaryKey, this._sort]
+      ];
     }
 
     // pagination
-    if (page !== '' && typeof page !== 'undefined') {
-      let { limit, number } = page;
-      limit = limit ? parseInt(limit) : this._limit;
-      number = number ? parseInt(number) : this._number;
+    if (search !== 'all') {
+      if (page !== '' && typeof page !== 'undefined') {
+        let { limit, number } = page;
+        limit = limit ? parseInt(limit) : this._limit;
+        number = number ? parseInt(number) : this._number;
 
-      if (limit !== '' && typeof limit !== 'undefined') {
-        querySql.limit = limit;
+        if (limit !== '' && typeof limit !== 'undefined') {
+          querySql.limit = limit;
+        }
+
+        if (number !== '' && typeof number !== 'undefined') {
+          querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
+        }
+      } else {
+        querySql.limit = this._limit;
+        querySql.offset = this._number;
       }
 
-      if (number !== '' && typeof number !== 'undefined') {
-        querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
-      }
-    } else {
-      querySql.limit = this._limit;
-      querySql.offset = this._number;
-    }
-
-    // search
-    if (search !== '' && typeof search !== 'undefined') {
-      querySql.where = {
-        [Op.or]: [
-          {
-            department: {
+      // search
+      if (search !== '' && typeof search !== 'undefined') {
+        querySql.where = {
+          [Op.or]: this._searchFields.map(field => ({
+            [field]: {
               [Op.substring]: search
             }
-          }
-        ]
-      };
+          }))
+        };
+      }
     }
 
     // const count = await this._model.count({
@@ -83,46 +97,58 @@ class DepartmentRepository {
   async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID Department Required');
 
-    const data = await this._model.findOne({ where: { id_department: id } });
+    const data = await this._model.findOne({ where: { unique_id: id } });
 
     if (!data) throw new NotFoundError('Department not found');
 
     return data;
   }
 
-  async add (params) {
-    const { department } = params;
+  async add (userId, params) {
+    const { department_name: departmentName, department_code: departmentCode, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(department);
+    const checkDuplicate = await this.checkDuplicate(departmentName, departmentCode);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${department} already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${departmentName} or ${departmentCode} already Created`);
+
+    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
 
     try {
       return await this._model.create({
-        id_department: uuidv4().toString(),
-        department,
-        created_at: timeHis()
+        [this._primaryKey]: generateId[0][0].generated_id,
+        department_name: departmentName,
+        department_code: departmentCode,
+        created_by: userId,
+        created_date: timeHis(),
+        screen_id: screenId,
+        unique_id: uuidv4().toString()
       });
     } catch (error) {
-      throw new InvariantError('Add Department Failed');
+      throw new UnprocessableEntityError('Add Department Failed');
     }
   }
 
-  async checkDuplicate (department) {
+  async checkDuplicate (departmentName, departmentCode) {
     const check = await this._model.findAll({
       where: {
-        department
+        [Op.or]: [
+          { department_name: departmentName },
+          { department_code: departmentCode }
+        ]
       }
     });
 
     return check.length;
   }
 
-  async checkDuplicateEdit (id, department) {
+  async checkDuplicateEdit (id, departmentName, departmentCode) {
     const check = await this._model.findAll({
       where: {
-        department,
-        id_department: {
+        [Op.or]: [
+          { department_name: departmentName },
+          { department_code: departmentCode }
+        ],
+        unique_id: {
           [Op.ne]: id
         }
       }
@@ -131,50 +157,53 @@ class DepartmentRepository {
     return check.length;
   }
 
-  async update (id, params) {
+  async update (id, userId, params) {
     // Check Data if Exist
-    await this.getOne(id);
+    // await this.getOne(id);
 
-    const { department } = params;
+    const { department_name: departmentName, department_code: departmentCode } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, department);
+    const checkDuplicate = await this.checkDuplicateEdit(id, departmentName, departmentCode);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${department} alrady Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${departmentName} or ${departmentCode} already Created`);
 
     try {
       return await this._model.update({
-        department,
-        updated_at: timeHis()
+        department_name: departmentName,
+        department_code: departmentCode,
+        updated_by: userId,
+        updated_date: timeHis()
       }, {
         where: {
-          id_department: id
+          unique_id: id
         }
       });
     } catch (error) {
-      throw new InvariantError('Update Department Failed');
+      throw new UnprocessableEntityError('Update Department Failed');
     }
   }
 
-  async delete (id) {
+  async delete (id, userId) {
     // Check Data if Exist
-    await this.getOne(id);
+    // await this.getOne(id);
 
     const arrayId = id.split(',');
 
     try {
       return await this._model.update({
-        status: '0',
-        deleted_at: timeHis()
+        is_active: '0',
+        updated_by: userId,
+        updated_date: timeHis()
       },
       {
         where: {
-          id_department: {
+          unique_id: {
             [Op.in]: arrayId
           }
         }
       });
     } catch (error) {
-      throw new InvariantError('Delete Department Failed');
+      throw new UnprocessableEntityError('Delete Department Failed');
     }
   }
 }

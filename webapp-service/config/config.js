@@ -14,6 +14,12 @@ module.exports = {
     dialect: DB_DRIVER,
     dialectOptions: {
       bigNumberStrings: true
+    },
+    pool: {
+      max: 20,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
     }
   },
   test: {
@@ -25,6 +31,13 @@ module.exports = {
     dialect: DB_DRIVER,
     dialectOptions: {
       bigNumberStrings: true
+    },
+    
+    pool: {
+      max: 20,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
     }
   },
   production: {

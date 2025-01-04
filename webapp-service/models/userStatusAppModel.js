@@ -12,76 +12,96 @@ module.exports = (sequelize, DataTypes) => {
     static associate (models) {
       // define association here
       UserStatusApp.belongsTo(models.StatusApp, {
-        foreignKey: 'id_status_app',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'status_app_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
         as: 'status_app',
-        scope: { status: '1' }
+        scope: { is_active: '1' }
       });
 
       UserStatusApp.belongsTo(models.User, {
-        foreignKey: 'id_user',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
         as: 'user',
-        scope: { status: '1' }
+        scope: { is_active: '1' }
       });
     }
   };
   UserStatusApp.init({
-    id_user_status_app: {
+    user_status_app_id: {
       allowNull: false,
       primaryKey: true,
       type: DataTypes.STRING(50)
     },
-    id_user: {
+    user_id: {
+      allowNull: false,
+      type: DataTypes.STRING(50),
+      references: {
+        model: 'user',
+        key: 'user_id'
+      }
+    },
+    status_app_id: {
+      allowNull: false,
+      type: DataTypes.STRING(50),
+      references: {
+        model: 'status_app',
+        key: 'status_app_id'
+      }
+    },
+    created_by: {
       allowNull: false,
       type: DataTypes.STRING(50)
     },
-    id_status_app: {
+    created_date: {
       allowNull: false,
+      type: DataTypes.DATE
+    },
+    updated_by: {
+      allowNull: true,
       type: DataTypes.STRING(50)
     },
-    created_at: {
+    updated_date: {
       allowNull: true,
       type: DataTypes.DATE
     },
-    updated_at: {
+    unique_id: {
       allowNull: true,
-      type: DataTypes.DATE
+      type: DataTypes.STRING(50)
     },
-    deleted_at: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    status: {
+    is_active: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: '1',
-      comment: '0 = Deleted, 1 = Active'
+      comment: '1 = Active, 0 = Deleted'
     }
   }, {
     sequelize,
     modelName: 'UserStatusApp',
-    tableName: 'user_status_app',
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    tableName: 'ms_user_status_app',
+    createdAt: 'created_date',
     underscored: true,
     timestamps: false,
     defaultScope: {
       where: {
-        status: '1'
+        is_active: '1'
       }
     },
     scopes: {
       withoutTemplateFields: {
-        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+        attributes: { exclude: ['created_date', 'created_by', 'updated_date', 'updated_by', 'is_active'] }
       },
       active: {
         where: {
-          status: '1'
+          is_active: '1'
+        }
+      },
+      deleted: {
+        where: {
+          is_active: '0'
         }
       }
     }

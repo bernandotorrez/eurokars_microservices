@@ -1,0 +1,86 @@
+const express = require('express');
+require('express-async-errors');
+const router = express.Router();
+const httpStatus = require('http-status').status;
+const { getuserId } = require('../../utils/tokenManager');
+
+// Repositories
+const userMenuGroupRepository = require('../../repositories/mysql/userMenuGroupRepository');
+
+// Validator
+const userMenuGroupValidator = require('../../validators/userMenuGroupValidator');
+
+router.get('/', async (req, res) => {
+  const { search, sort, page } = req.query;
+
+  const userMenuGroups = await userMenuGroupRepository.getAll({ search, sort, page });
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Retrieve Data',
+    data: userMenuGroups
+  });
+});
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const userMenuGroups = await userMenuGroupRepository.getOne(id);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Retrieve Data',
+    data: userMenuGroups
+  });
+});
+
+router.post('/', async (req, res) => {
+  userMenuGroupValidator.create(req.body);
+
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  const userMenuGroup = await userMenuGroupRepository.add(oid, req.body);
+
+  res.status(httpStatus.CREATED).json({
+    code: httpStatus.CREATED,
+    success: true,
+    message: 'Successfully Add User Menu Group',
+    data: userMenuGroup
+  });
+});
+
+router.put('/:id', async (req, res) => {
+  userMenuGroupValidator.update(req.body);
+
+  const { id } = req.params;
+
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  const userMenuGroup = await userMenuGroupRepository.update(id, oid, req.body);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Update User Menu Group',
+    data: userMenuGroup
+  });
+});
+
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  await userMenuGroupRepository.delete(id, oid);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Delete User Menu Group',
+    data: id
+  });
+});
+
+module.exports = router;

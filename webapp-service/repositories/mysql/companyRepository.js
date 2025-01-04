@@ -1,13 +1,13 @@
-const { Company } = require('../../models');
+const { Company, sequelize } = require('../../models');
 const { Op } = require('sequelize');
-const InvariantError = require('../../exceptions/InvariantError');
+const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const ConflictError = require('../../exceptions/ConflictError');
 const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
-class StatusAppRepository {
+class CompanyRepository {
   constructor () {
     this._model = Company;
     this._primaryKey = this._model.primaryKeyAttribute;
@@ -15,63 +15,72 @@ class StatusAppRepository {
     this._sort = 'ASC';
     this._limit = 5;
     this._number = 0;
+    this._searchFields = [this._primaryKey, 'company_name', 'company_code', 'tax_id', 'created_date'];
   }
 
   async getAll ({ search, sort, page }) {
     const querySql = {};
 
-    // sorting
-    if (sort !== '' && typeof sort !== 'undefined') {
-      const { value, sorting } = sort;
-      const arrayQuerySort = [this._sortBy, this._sort];
+    // Sorting logic
+    if (sort && sort.value && sort.sorting) {
+      const sortField = sort.value;
+      const sortDirection = sort.sorting.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-      if (value !== '' && typeof value !== 'undefined') {
-        arrayQuerySort[0] = value;
+      if (this._searchFields.includes(sortField)) {
+        // Handle sorting with related fields
+        if (sortField.startsWith('$')) {
+          const cleanField = sortField.replace(/\$/g, '').split('.'); // Remove '$' and split by '.'
+          querySql.order = [
+            [...cleanField, sortDirection]
+          ];
+        } else {
+          // Handle direct sorting on the main model
+          querySql.order = [
+            [sortField, sortDirection]
+          ];
+        }
+      } else {
+        // Fallback to default sorting
+        querySql.order = [
+          [this._primaryKey, this._sort]
+        ];
       }
-
-      if (sorting !== '' && typeof sorting !== 'undefined') {
-        arrayQuerySort[1] = sorting;
-      }
-
-      querySql.order = [[arrayQuerySort[0], arrayQuerySort[1]]];
     } else {
-      querySql.order = [[this._primaryKey, this._sort]];
+      // Default sorting
+      querySql.order = [
+        [this._primaryKey, this._sort]
+      ];
     }
 
     // pagination
-    if (page !== '' && typeof page !== 'undefined') {
-      let { limit, number } = page;
-      limit = limit ? parseInt(limit) : this._limit;
-      number = number ? parseInt(number) : this._number;
+    if (search !== 'all') {
+      if (page !== '' && typeof page !== 'undefined') {
+        let { limit, number } = page;
+        limit = limit ? parseInt(limit) : this._limit;
+        number = number ? parseInt(number) : this._number;
 
-      if (limit !== '' && typeof limit !== 'undefined') {
-        querySql.limit = limit;
+        if (limit !== '' && typeof limit !== 'undefined') {
+          querySql.limit = limit;
+        }
+
+        if (number !== '' && typeof number !== 'undefined') {
+          querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
+        }
+      } else {
+        querySql.limit = this._limit;
+        querySql.offset = this._number;
       }
 
-      if (number !== '' && typeof number !== 'undefined') {
-        querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
+      // search
+      if (search !== '' && typeof search !== 'undefined') {
+        querySql.where = {
+          [Op.or]: this._searchFields.map(field => ({
+            [field]: {
+              [Op.substring]: search
+            }
+          }))
+        };
       }
-    } else {
-      querySql.limit = this._limit;
-      querySql.offset = this._number;
-    }
-
-    // search
-    if (search !== '' && typeof search !== 'undefined') {
-      querySql.where = {
-        [Op.or]: [
-          {
-            status_app: {
-              [Op.substring]: search
-            }
-          },
-          {
-            redirect_url: {
-              [Op.substring]: search
-            }
-          }
-        ]
-      };
     }
 
     // const count = await this._model.count({
@@ -88,50 +97,60 @@ class StatusAppRepository {
   async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID Company Required');
 
-    const data = await this._model.findOne({ where: { id_company: id } });
+    const data = await this._model.findOne({ where: { unique_id: id } });
 
     if (!data) throw new NotFoundError('Company not found');
 
     return data;
   }
 
-  async add (params) {
-    const { company, company_short: companyShort } = params;
-    console.log(params)
+  async add (userId, params) {
+    const { company_name: companyName, company_code: companyCode, tax_id: taxId, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(company, companyShort);
+    const checkDuplicate = await this.checkDuplicate(companyName, companyCode, taxId);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${company} - ${companyShort}  already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${companyName} - ${companyCode} - ${taxId} already Created`);
+
+    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
 
     try {
       return await this._model.create({
-        id_company: uuidv4().toString(),
-        company,
-        company_short: companyShort,
-        created_at: timeHis()
+        [this._primaryKey]: generateId[0][0].generated_id,
+        company_name: companyName,
+        company_code: companyCode,
+        tax_id: taxId,
+        created_by: userId,
+        created_date: timeHis(),
+        unique_id: uuidv4().toString()
       });
     } catch (error) {
-      throw new InvariantError('Add Company Failed');
+      throw new UnprocessableEntityError('Add Company Failed');
     }
   }
 
-  async checkDuplicate (company, companyShort) {
+  async checkDuplicate (companyName, companyCode, taxId) {
     const check = await this._model.findAll({
       where: {
-        company,
-        company_short: companyShort
+        [Op.or]: [
+          { company_name: companyName },
+          { company_code: companyCode },
+          { tax_id: taxId }
+        ]
       }
     });
 
     return check.length;
   }
 
-  async checkDuplicateEdit (id, company, companyShort) {
+  async checkDuplicateEdit (id, companyName, companyCode, taxId) {
     const check = await this._model.findAll({
       where: {
-        company,
-        company_short: companyShort,
-        id_company: {
+        [Op.or]: [
+          { company_name: companyName },
+          { company_code: companyCode },
+          { tax_id: taxId }
+        ],
+        unique_id: {
           [Op.ne]: id
         }
       }
@@ -140,52 +159,55 @@ class StatusAppRepository {
     return check.length;
   }
 
-  async update (id, params) {
+  async update (id, userId, params) {
     // Check Data if Exist
     await this.getOne(id);
 
-    const { company, company_short: companyShort } = params;
+    const { company_name: companyName, company_code: companyCode, tax_id: taxId } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, company, companyShort);
+    const checkDuplicate = await this.checkDuplicateEdit(id, companyName, companyCode, taxId);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${company} - ${companyShort}  already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${companyName} - ${companyCode} - ${taxId} already Created`);
 
     try {
       return await this._model.update({
-        company,
-        company_short: companyShort,
-        updated_at: timeHis()
+        company_name: companyName,
+        company_code: companyCode,
+        tax_id: taxId,
+        updated_by: userId,
+        updated_date: timeHis()
       }, {
         where: {
-          id_company: id
+          unique_id: id
         }
       });
     } catch (error) {
-      throw new InvariantError('Update Company Failed');
+      throw new UnprocessableEntityError('Update Company Failed');
     }
   }
 
-  async delete (id) {
-    await this.getOne(id);
+  async delete (id, userId) {
+    // await this.getOne(id);
 
     const arrayId = id.split(',');
 
     try {
       return await this._model.update({
-        status: '0',
-        deleted_at: timeHis()
+        is_active: '0',
+        updated_by: userId,
+        updated_date: timeHis()
       },
       {
         where: {
-          id_company: {
+          unique_id: {
             [Op.in]: arrayId
           }
         }
       });
     } catch (error) {
-      throw new InvariantError('Delete Company Failed');
+      throw new UnprocessableEntityError('Delete Company Failed');
     }
   }
 }
 
-module.exports = new StatusAppRepository();
+module.exports = new CompanyRepository();

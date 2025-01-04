@@ -100,6 +100,22 @@ const checkDate = (value) => {
   return newDate;
 };
 
+const objectToQueryString = (obj) => {
+  let str = '';
+  for (const key in obj) {
+    if (typeof obj[key] === 'object') {
+      for (const subKey in obj[key]) {
+        str += `${key}[${subKey}]=${obj[key][subKey]}&`;
+      }
+    } else {
+      str += `${key}=${obj[key]}&`;
+    }
+  }
+
+  str = str.slice(0, -1);
+  return str;
+};
+
 module.exports = {
   time,
   timeHis,
@@ -108,5 +124,6 @@ module.exports = {
   checkNull,
   checkNullStart,
   checkDate,
-  timeDate
+  timeDate,
+  objectToQueryString
 };

@@ -1,24 +1,28 @@
 'use strict';
 
-const tableName = 'branch';
+const tableName = 'ms_branch';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(tableName, {
-      id_branch: {
+      branch_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      id_city: {
+      city_id: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      branch: {
-        allowNull: true,
+      branch_name: {
+        allowNull: false,
         type: Sequelize.STRING(50)
       },
+      branch_code: {
+        allowNull: false,
+        type: Sequelize.STRING(5)
+      },
       address: {
-        allowNull: true,
+        allowNull: false,
         type: Sequelize.TEXT()
       },
       phone: {
@@ -37,48 +41,57 @@ module.exports = {
           isEmail: true
         }
       },
-      short: {
-        allowNull: true,
-        type: Sequelize.STRING(5)
+      created_by: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      created_at: {
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
     });
 
     // Define indexes
     await queryInterface.addIndex(tableName, {
-      fields: ['branch'],
-      name: 'idx_branch'
+      fields: ['branch_name'],
+      name: 'idx_branch_name'
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_branch'
     });
 
     // Adding constraint
     await queryInterface.addConstraint(tableName, {
-      fields: ['id_city'],
+      fields: ['city_id'],
       type: 'foreign key',
       name: 'fk_branch_city',
       references: {
-        table: 'city',
-        field: 'id_city'
+        table: 'ms_city',
+        field: 'city_id'
       },
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION'
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
     });
   },
   down: async (queryInterface, Sequelize) => {
