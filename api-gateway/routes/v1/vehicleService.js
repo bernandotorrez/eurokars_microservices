@@ -8,7 +8,7 @@ const { URL_VEHICLE_SERVICE } = process.env;
 const api = apiAdapter(URL_VEHICLE_SERVICE);
 
 router.get('/', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
+  const accessToken = req.header('Eurokars-Auth-Token') ?? '';
   const headers = {
     headers: {
       'Eurokars-Auth-Token': accessToken
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
+  const accessToken = req.header('Eurokars-Auth-Token') ?? '';
   const headers = {
     headers: {
       'Eurokars-Auth-Token': accessToken
@@ -33,7 +33,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
+  const accessToken = req.header('Eurokars-Auth-Token') ?? '';
   const headers = {
     headers: {
       'Eurokars-Auth-Token': accessToken
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
+  const accessToken = req.header('Eurokars-Auth-Token') ?? '';
   const headers = {
     headers: {
       'Eurokars-Auth-Token': accessToken
@@ -58,7 +58,7 @@ router.put('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-  const accessToken = req.header('Eurokars-Auth-Token');
+  const accessToken = req.header('Eurokars-Auth-Token') ?? '';
   const headers = {
     headers: {
       'Eurokars-Auth-Token': accessToken

@@ -1,7 +1,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-const tableName = 'company';
+const tableName = 'ms_company';
 module.exports = {
   async up (queryInterface, Sequelize) {
     /**
@@ -11,48 +11,67 @@ module.exports = {
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
     await queryInterface.createTable(tableName, {
-      id_company: {
+      company_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      company: {
+      company_name: {
         allowNull: false,
         type: Sequelize.STRING(100)
       },
-      company_short: {
+      company_code: {
         allowNull: false,
         type: Sequelize.CHAR(3)
       },
-      created_at: {
+      created_by: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      tax_id: {
+        allowNull: false,
+        type: Sequelize.STRING(25),
+        comment: 'NPWP'
+      },
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
     });
 
     // Index
     await queryInterface.addIndex(tableName, {
-      fields: ['company'],
-      name: 'idx_company'
+      fields: ['company_name'],
+      name: 'idx_company_name'
     });
+
     await queryInterface.addIndex(tableName, {
-      fields: ['company_short'],
-      name: 'idx_company_short'
+      fields: ['company_code'],
+      name: 'idx_company_code'
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_company'
     });
   },
 

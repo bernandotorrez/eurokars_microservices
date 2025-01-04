@@ -1,4 +1,4 @@
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const BadRequestError = require('../exceptions/BadRequestError');
 const { convertMessage } = require('../utils/globalFunction');
 

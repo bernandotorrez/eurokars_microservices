@@ -11,27 +11,76 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
+      // User.hasMany(models.UserStatusApp, {
+      //   foreignKey: 'id_user',
+      //   onDelete: 'RESTRICT',
+      //   onUpdate: 'RESTRICT',
+      //   keyType: 'string',
+      //   as: 'user_status_app',
+      //   scope: { is_active: '1' }
+      // });
+
+      // User.belongsToMany(models.StatusApp, {
+      //   through: {
+      //     model: models.UserStatusApp,
+      //     scope: { is_active: '1' }
+      //   },
+      //   foreignKey: 'id_user',
+      //   onDelete: 'RESTRICT',
+      //   onUpdate: 'RESTRICT',
+      //   keyType: 'string',
+      //   as: 'status_app',
+      //   scope: { is_active: '1' }
+      // });
+
       User.hasMany(models.UserStatusApp, {
-        foreignKey: 'id_user',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
         as: 'user_status_app',
-        scope: { status: '1' }
+        scope: { is_active: '1' }
       });
 
-      User.hasMany(models.UserDepartment, {
-        foreignKey: 'id_user',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+      User.hasMany(models.UserDivision, {
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
-        as: 'user_department',
-        scope: { status: '1' }
+        as: 'user_division',
+        scope: { is_active: '1' }
+      });
+
+      User.hasMany(models.UserCompanyDetail, {
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'user_company_detail',
+        scope: { is_active: '1' }
+      });
+
+      User.hasMany(models.UserMenuGroup, {
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'user_menu_group',
+        scope: { is_active: '1' }
+      });
+
+      User.hasMany(models.UserRole, {
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'user_role',
+        scope: { is_active: '1' }
       });
     }
   };
   User.init({
-    id_user: {
+    user_id: {
       type: DataTypes.STRING(50),
       primaryKey: true
     },
@@ -58,61 +107,52 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       comment: 'Azure field: displayName'
     },
-    last_ip_address: {
-      allowNull: false,
-      type: DataTypes.STRING(25)
-    },
-    last_login_at: {
-      allowNull: false,
-      type: DataTypes.DATE
-    },
     logout_uri: {
       allowNull: false,
       type: DataTypes.TEXT
     },
-    created_at: {
-      allowNull: true,
+    created_by: {
+      allowNull: false,
+      type: DataTypes.STRING(50)
+    },
+    created_date: {
+      allowNull: false,
       type: DataTypes.DATE
     },
-    updated_at: {
-      allowNull: true,
-      type: DataTypes.DATE
-    },
-    deleted_at: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    status: {
+    is_active: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: '1',
-      comment: '0 = Deleted, 1 = Active'
+      comment: '1 = Active, 0 = Deleted'
+    },
+    job_title: {
+      allowNull: false,
+      type: DataTypes.STRING(100)
     }
   }, {
     sequelize,
     modelName: 'User',
-    tableName: 'user',
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    tableName: 'ms_user',
+    createdAt: 'created_date',
     underscored: true,
     timestamps: false,
     defaultScope: {
       where: {
-        status: '1'
+        is_active: '1'
       }
     },
     scopes: {
       withoutTemplateFields: {
-        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+        attributes: { exclude: ['created_date', 'created_by', 'updated_date', 'updated_by', 'is_active'] }
       },
       active: {
         where: {
-          status: '1'
+          is_active: '1'
         }
       },
       deleted: {
         where: {
-          status: '0'
+          is_active: '0'
         }
       }
     }

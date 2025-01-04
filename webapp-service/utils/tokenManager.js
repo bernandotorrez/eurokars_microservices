@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const BadRequestError = require('../exceptions/BadRequestError');
+const AuthenticationError = require('../exceptions/AuthenticationError');
 
 const { URL, JWT_PRIVATE_KEY, JWT_REFRESH_TOKEN } = process.env;
 
@@ -26,8 +26,24 @@ const TokenManager = {
       const user = jwt.verify(refreshToken, JWT_REFRESH_TOKEN);
       return user;
     } catch (error) {
-      throw new BadRequestError('Refresh Token not Valid');
+      throw new AuthenticationError('Refresh Token not Valid');
     }
+  },
+  getuserId: (accessToken) => {
+    try {
+      const user = jwt.decode(accessToken);
+      return user;
+    } catch (error) {
+      throw new AuthenticationError('Access Token not Valid');
+    }
+  },
+  generateAccessTokenDevice: (uuid, payload) => {
+    const options = {
+      issuer: URL,
+      subject: uuid
+    };
+
+    return jwt.sign({ data: payload }, JWT_PRIVATE_KEY, options);
   }
 };
 

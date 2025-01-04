@@ -1,5 +1,5 @@
 const { RefreshToken } = require('../../models');
-const InvariantError = require('../../exceptions/InvariantError');
+const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const AuthenticationError = require('../../exceptions/AuthenticationError');
 
 class RefreshTokenRepository {
@@ -11,7 +11,7 @@ class RefreshTokenRepository {
     try {
       return await this._model.create({ token });
     } catch (error) {
-      throw new InvariantError('Add Refresh Token Failed');
+      throw new UnprocessableEntityError('Add Refresh Token Failed');
     }
   }
 
@@ -37,7 +37,7 @@ class RefreshTokenRepository {
 
       return deleteToken;
     } catch (error) {
-      throw new InvariantError('Delete Refresh Token Failed');
+      throw new UnprocessableEntityError('Delete Refresh Token Failed');
     }
   }
 }

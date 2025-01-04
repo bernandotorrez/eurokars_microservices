@@ -1,6 +1,6 @@
 const AuthorizationError = require('../exceptions/AuthorizationError');
 
-function auth (req, res, next) {
+function proxy (req, res, next) {
   const validApiGatewayIP = ['::ffff:127.0.0.1', '::1'];
   const remoteAddress = req.connection.remoteAddress;
 
@@ -11,4 +11,4 @@ function auth (req, res, next) {
   }
 }
 
-module.exports = auth;
+module.exports = proxy;

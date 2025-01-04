@@ -11,65 +11,84 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
+      Company.hasMany(models.VendorCompany, {
+        foreignKey: 'company_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'company_vendor',
+        scope: { is_active: '1' }
+      });
     }
   };
   Company.init({
-    id_company: {
+    company_id: {
       allowNull: false,
       primaryKey: true,
       type: DataTypes.STRING(50)
     },
-    company: {
+    company_name: {
       allowNull: false,
       type: DataTypes.STRING(100)
     },
-    company_short: {
+    company_code: {
       allowNull: false,
       type: DataTypes.CHAR(3)
     },
-    created_at: {
+    tax_id: {
+      allowNull: false,
+      type: DataTypes.STRING(16)
+    },
+    created_by: {
+      allowNull: false,
+      type: DataTypes.STRING(50)
+    },
+    created_date: {
+      allowNull: false,
+      type: DataTypes.DATE
+    },
+    updated_by: {
+      allowNull: true,
+      type: DataTypes.STRING(50)
+    },
+    updated_date: {
       allowNull: true,
       type: DataTypes.DATE
     },
-    updated_at: {
+    unique_id: {
       allowNull: true,
-      type: DataTypes.DATE
+      type: DataTypes.STRING(50)
     },
-    deleted_at: {
-      allowNull: true,
-      type: DataTypes.DATE
-    },
-    status: {
+    is_active: {
       allowNull: false,
       type: DataTypes.ENUM('0', '1'),
       defaultValue: '1',
-      comment: '0 = Deleted, 1 = Active'
+      comment: '1 = Active, 0 = Deleted'
     }
   }, {
     sequelize,
     modelName: 'Company',
-    tableName: 'company',
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    tableName: 'ms_company',
+    createdAt: 'created_date',
     underscored: true,
     timestamps: false,
     defaultScope: {
       where: {
-        status: '1'
+        is_active: '1'
       }
     },
     scopes: {
       withoutTemplateFields: {
-        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+        attributes: { exclude: ['created_date', 'created_by', 'updated_date', 'updated_by', 'is_active'] }
       },
       active: {
         where: {
-          status: '1'
+          is_active: '1'
         }
       },
       deleted: {
         where: {
-          status: '0'
+          is_active: '0'
         }
       }
     }

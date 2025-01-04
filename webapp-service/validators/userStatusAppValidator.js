@@ -1,10 +1,13 @@
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const BadRequestError = require('../exceptions/BadRequestError');
 const { convertMessage } = require('../utils/globalFunction');
 
 const createSchema = Joi.object({
-  id_user: Joi.string().min(1).max(50).required(),
-  id_status_app: Joi.string().min(1).max(50).required()
+  user_id: Joi.string().min(1).max(50).required(),
+  status_app_id: Joi.string().min(1).max(369).required().messages({
+    'string.max': 'Maximal 10 ID Status App per Request'
+  }),
+  screen_id: Joi.string().min(3).max(10).required()
 });
 
 const create = (payload) => {
@@ -17,7 +20,15 @@ const create = (payload) => {
 };
 
 const updateSchema = Joi.object({
-  id_status_app: Joi.string().min(1).max(50).required()
+  status_app_id: Joi.object({
+    insert: Joi.string().min(1).max(369).allow('').messages({
+      'string.max': 'Maximal 10 ID Status App per Request'
+    }),
+    remove: Joi.string().min(1).max(369).allow('').messages({
+      'string.max': 'Maximal 10 ID Status App per Request'
+    })
+  }),
+  screen_id: Joi.string().min(3).max(10).required()
 });
 
 const update = (payload) => {

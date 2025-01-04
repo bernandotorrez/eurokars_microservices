@@ -1,4 +1,5 @@
 const moment = require('moment');
+const crypto = require('crypto');
 
 const time = () => {
   const date = new Date();
@@ -131,6 +132,13 @@ function base64URLEncode (buffer) {
     .replace(/=/g, '');
 }
 
+function generatePkcePair () {
+  const verifier = crypto.randomBytes(32).toString('hex');
+  let challenge = crypto.createHash('sha256').update(verifier).digest('base64');
+  challenge = challenge.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return { verifier, challenge };
+}
+
 module.exports = {
   time,
   timeHis,
@@ -143,5 +151,6 @@ module.exports = {
   convertMessage,
   objectToQueryString,
   capitalizeWords,
-  base64URLEncode
+  base64URLEncode,
+  generatePkcePair
 };

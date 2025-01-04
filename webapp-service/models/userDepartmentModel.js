@@ -12,76 +12,72 @@ module.exports = (sequelize, DataTypes) => {
     static associate (models) {
       // define association here
       UserDepartment.belongsTo(models.Department, {
-        foreignKey: 'id_department',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'department_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
         as: 'department',
-        scope: { status: '1' }
+        scope: { is_active: '1' }
       });
 
       UserDepartment.belongsTo(models.User, {
-        foreignKey: 'id_user',
-        onDelete: 'NO ACTION',
-        onUpdate: 'NO ACTION',
+        foreignKey: 'user_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
         keyType: 'string',
         as: 'user',
-        scope: { status: '1' }
+        scope: { is_active: '1' }
       });
     }
   };
   UserDepartment.init({
-    id_user_department: {
+    user_department_id: {
       allowNull: false,
       primaryKey: true,
       type: DataTypes.STRING(50)
     },
-    id_user: {
+    user_id: {
       allowNull: false,
       type: DataTypes.STRING(50)
     },
-    id_department: {
+    department_id: {
       allowNull: false,
       type: DataTypes.STRING(50)
     },
-    created_at: {
+    created_date: {
       allowNull: true,
       type: DataTypes.DATE
     },
-    updated_at: {
-      allowNull: true,
-      type: DataTypes.DATE
-    },
-    deleted_at: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    status: {
+    is_active: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: '1',
-      comment: '0 = Deleted, 1 = Active'
+      comment: '1 = Active, 0 = Deleted'
     }
   }, {
     sequelize,
     modelName: 'UserDepartment',
-    tableName: 'user_department',
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    tableName: 'ms_user_department',
+    createdAt: 'created_date',
     underscored: true,
     timestamps: false,
     defaultScope: {
       where: {
-        status: '1'
+        is_active: '1'
       }
     },
     scopes: {
       withoutTemplateFields: {
-        attributes: { exclude: ['created_at', 'updated_at', 'deleted_at', 'status'] }
+        attributes: { exclude: ['created_date', 'created_by', 'updated_date', 'updated_by', 'is_active'] }
       },
       active: {
         where: {
-          status: '1'
+          is_active: '1'
+        }
+      },
+      deleted: {
+        where: {
+          is_active: '0'
         }
       }
     }

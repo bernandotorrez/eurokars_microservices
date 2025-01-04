@@ -1,7 +1,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-const tableName = 'city';
+const tableName = 'ms_city';
 module.exports = {
   async up (queryInterface, Sequelize) {
     /**
@@ -11,57 +11,70 @@ module.exports = {
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
     await queryInterface.createTable(tableName, {
-      id_city: {
+      city_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      id_province: {
+      province_id: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      city: {
+      city_name: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      created_at: {
+      created_by: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
     });
 
     // Index
     await queryInterface.addIndex(tableName, {
-      fields: ['city'],
-      name: 'idx_city'
+      fields: ['city_name'],
+      name: 'idx_city_name'
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_city'
     });
 
     // Constraint
     await queryInterface.addConstraint(tableName, {
-      fields: ['id_province'],
+      fields: ['province_id'],
       type: 'foreign key',
       name: 'fk_city_province',
       references: {
-        table: 'province',
-        field: 'id_province'
+        table: 'ms_province',
+        field: 'province_id'
       },
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION'
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
     });
   },
 

@@ -1,6 +1,6 @@
-const { StatusApp } = require('../../models');
+const { StatusApp, sequelize } = require('../../models');
 const { Op } = require('sequelize');
-const InvariantError = require('../../exceptions/InvariantError');
+const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
 const ConflictError = require('../../exceptions/ConflictError');
@@ -15,63 +15,72 @@ class StatusAppRepository {
     this._sort = 'ASC';
     this._limit = 5;
     this._number = 0;
+    this._searchFields = [this._primaryKey, 'status_app_name', 'redirect_url', 'created_date'];
   }
 
   async getAll ({ search, sort, page }) {
     const querySql = {};
 
-    // sorting
-    if (sort !== '' && typeof sort !== 'undefined') {
-      const { value, sorting } = sort;
-      const arrayQuerySort = [this._sortBy, this._sort];
+    // Sorting logic
+    if (sort && sort.value && sort.sorting) {
+      const sortField = sort.value;
+      const sortDirection = sort.sorting.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-      if (value !== '' && typeof value !== 'undefined') {
-        arrayQuerySort[0] = value;
+      if (this._searchFields.includes(sortField)) {
+        // Handle sorting with related fields
+        if (sortField.startsWith('$')) {
+          const cleanField = sortField.replace(/\$/g, '').split('.'); // Remove '$' and split by '.'
+          querySql.order = [
+            [...cleanField, sortDirection]
+          ];
+        } else {
+          // Handle direct sorting on the main model
+          querySql.order = [
+            [sortField, sortDirection]
+          ];
+        }
+      } else {
+        // Fallback to default sorting
+        querySql.order = [
+          [this._primaryKey, this._sort]
+        ];
       }
-
-      if (sorting !== '' && typeof sorting !== 'undefined') {
-        arrayQuerySort[1] = sorting;
-      }
-
-      querySql.order = [[arrayQuerySort[0], arrayQuerySort[1]]];
     } else {
-      querySql.order = [[this._primaryKey, this._sort]];
+      // Default sorting
+      querySql.order = [
+        [this._primaryKey, this._sort]
+      ];
     }
 
     // pagination
-    if (page !== '' && typeof page !== 'undefined') {
-      let { limit, number } = page;
-      limit = limit ? parseInt(limit) : this._limit;
-      number = number ? parseInt(number) : this._number;
+    if (search !== 'all') {
+      if (page !== '' && typeof page !== 'undefined') {
+        let { limit, number } = page;
+        limit = limit ? parseInt(limit) : this._limit;
+        number = number ? parseInt(number) : this._number;
 
-      if (limit !== '' && typeof limit !== 'undefined') {
-        querySql.limit = limit;
+        if (limit !== '' && typeof limit !== 'undefined') {
+          querySql.limit = limit;
+        }
+
+        if (number !== '' && typeof number !== 'undefined') {
+          querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
+        }
+      } else {
+        querySql.limit = this._limit;
+        querySql.offset = this._number;
       }
 
-      if (number !== '' && typeof number !== 'undefined') {
-        querySql.offset = number === 0 ? 0 : parseInt((number * limit) - limit);
+      // search
+      if (search !== '' && typeof search !== 'undefined') {
+        querySql.where = {
+          [Op.or]: this._searchFields.map(field => ({
+            [field]: {
+              [Op.substring]: search
+            }
+          }))
+        };
       }
-    } else {
-      querySql.limit = this._limit;
-      querySql.offset = this._number;
-    }
-
-    // search
-    if (search !== '' && typeof search !== 'undefined') {
-      querySql.where = {
-        [Op.or]: [
-          {
-            status_app: {
-              [Op.substring]: search
-            }
-          },
-          {
-            redirect_url: {
-              [Op.substring]: search
-            }
-          }
-        ]
-      };
     }
 
     // const count = await this._model.count({
@@ -88,47 +97,63 @@ class StatusAppRepository {
   async getOne (id = '') {
     if (id === '') throw new BadRequestError('ID Status App Required');
 
-    const data = await this._model.findOne({ where: { id_status_app: id } });
+    const data = await this._model.findOne({
+      where: { unique_id: id }
+    });
 
     if (!data) throw new NotFoundError('Status App not found');
 
     return data;
   }
 
-  async add (params) {
-    const { status_app: statusApp, redirect_url: redirectUrl } = params;
+  async add (userId, params) {
+    const {
+      status_app_name: statusAppName,
+      redirect_url: redirectUrl,
+      screen_id: screenId
+    } = params;
 
-    const checkDuplicate = await this.checkDuplicate(statusApp);
+    const checkDuplicate = await this.checkDuplicate(statusAppName, redirectUrl);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusApp} already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${statusAppName} or ${redirectUrl} already Created`);
+
+    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
 
     try {
       return await this._model.create({
-        id_status_app: uuidv4().toString(),
-        status_app: statusApp,
+        [this._primaryKey]: generateId[0][0].generated_id,
+        status_app_name: statusAppName,
         redirect_url: redirectUrl,
-        created_at: timeHis()
+        created_by: userId,
+        created_date: timeHis(),
+        unique_id: uuidv4().toString()
       });
     } catch (error) {
-      throw new InvariantError('Add Status App Failed');
+      throw new UnprocessableEntityError('Add Status App Failed');
     }
   }
 
-  async checkDuplicate (statusApp) {
+  async checkDuplicate (statusAppName, redirectUrl) {
     const check = await this._model.findAll({
       where: {
-        status_app: statusApp
+        [Op.or]: [
+          { status_app_name: statusAppName },
+          { redirect_url: redirectUrl }
+        ]
       }
     });
 
     return check.length;
   }
 
-  async checkDuplicateEdit (id, statusApp) {
+  async checkDuplicateEdit (id, statusAppName, redirectUrl) {
     const check = await this._model.findAll({
       where: {
-        status_app: statusApp,
-        id_status_app: {
+        [Op.or]: [
+          { status_app_name: statusAppName },
+          { redirect_url: redirectUrl }
+        ],
+        unique_id: {
           [Op.ne]: id
         }
       }
@@ -137,50 +162,52 @@ class StatusAppRepository {
     return check.length;
   }
 
-  async update (id, params) {
+  async update (id, userId, params) {
     // Check Data if Exist
     await this.getOne(id);
 
-    const { status_app: statusApp, redirect_url: redirectUrl } = params;
+    const { status_app_name: statusAppName, redirect_url: redirectUrl } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, statusApp);
+    const checkDuplicate = await this.checkDuplicateEdit(id, statusAppName, redirectUrl);
 
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusApp} already Created`);
+    if (checkDuplicate >= 1) throw new ConflictError(`${statusAppName} or ${redirectUrl} already Created`);
 
     try {
       return await this._model.update({
-        status_app: statusApp,
+        status_app_name: statusAppName,
         redirect_url: redirectUrl,
-        updated_at: timeHis()
+        updated_by: userId,
+        updated_date: timeHis()
       }, {
         where: {
-          id_status_app: id
+          unique_id: id
         }
       });
     } catch (error) {
-      throw new InvariantError('Update Status App Failed');
+      throw new UnprocessableEntityError('Update Status App Failed');
     }
   }
 
-  async delete (id) {
-    await this.getOne(id);
+  async delete (id, userId) {
+    // await this.getOne(id);
 
     const arrayId = id.split(',');
 
     try {
       return await this._model.update({
-        status: '0',
-        deleted_at: timeHis()
+        is_active: '0',
+        deleted_by: userId,
+        deleted_date: timeHis()
       },
       {
         where: {
-          id_status_app: {
+          unique_id: {
             [Op.in]: arrayId
           }
         }
       });
     } catch (error) {
-      throw new InvariantError('Delete Status App Failed');
+      throw new UnprocessableEntityError('Delete Status App Failed');
     }
   }
 }

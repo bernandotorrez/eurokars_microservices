@@ -1,10 +1,12 @@
 const express = require('express');
 require('express-async-errors');
 const router = express.Router();
-const httpStatus = require('http-status');
+const httpStatus = require('http-status').status;
+const { getuserId } = require('../../utils/tokenManager');
 
 // Repositories
 const userDepartmentRepository = require('../../repositories/mysql/userDepartmentRepository');
+const auditTrailLogMasterDataRepository = require('../../repositories/mysql/auditTrailLogMasterDataRepository');
 
 // Validator
 const userDepartmentValidator = require('../../validators/userDepartmentValidator');
@@ -40,7 +42,9 @@ router.post('/', async (req, res) => {
 
   const userDepartment = await userDepartmentRepository.add(req.body);
 
-  userDepartment.id_user_department = userDepartment.null;
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  await auditTrailLogMasterDataRepository.add({ oid, module: 'User Department', executionType: 'INSERT' });
 
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
@@ -53,16 +57,16 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   userDepartmentValidator.update(req.body);
 
-  console.log(req.body);
-
   const { id } = req.params;
 
   const userDepartment = await userDepartmentRepository.update(id, req.body);
 
-  userDepartment.id_user_department = userDepartment.null;
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
 
-  res.status(httpStatus.CREATED).json({
-    code: httpStatus.CREATED,
+  await auditTrailLogMasterDataRepository.add({ oid, module: 'User Department', executionType: 'UPDATE' });
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
     success: true,
     message: 'Successfully Update User Department',
     data: userDepartment
@@ -73,6 +77,10 @@ router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
   await userDepartmentRepository.delete(id);
+
+  const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
+
+  await auditTrailLogMasterDataRepository.add({ oid, module: 'User Department', executionType: 'DELETE' });
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

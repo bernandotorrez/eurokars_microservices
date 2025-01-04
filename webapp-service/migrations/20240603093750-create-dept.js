@@ -1,7 +1,7 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-const tableName = 'department';
+const tableName = 'ms_department';
 module.exports = {
   async up (queryInterface, Sequelize) {
     /**
@@ -11,40 +11,57 @@ module.exports = {
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
     await queryInterface.createTable(tableName, {
-      id_department: {
+      department_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      department: {
+      department_name: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      created_at: {
+      department_code: {
+        allowNull: true,
+        type: Sequelize.STRING(8)
+      },
+      created_by: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
     });
 
     // Index
     await queryInterface.addIndex(tableName, {
-      fields: ['department'],
-      name: 'idx_department'
+      fields: ['department_name'],
+      name: 'idx_department_name'
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_department'
     });
   },
 

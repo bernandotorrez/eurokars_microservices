@@ -1,66 +1,80 @@
 'use strict';
 
-const tableName = 'user_status_app';
+const tableName = 'ms_user_status_app';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable(tableName, {
-      id_user_status_app: {
+      user_status_app_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(50)
       },
-      id_user: {
+      user_id: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      id_status_app: {
+      status_app_id: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
-      created_at: {
+      created_by: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      created_date: {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
         type: Sequelize.DATE
       },
-      updated_at: {
+      updated_by: {
+        allowNull: true,
+        type: Sequelize.STRING(50)
+      },
+      updated_date: {
         allowNull: true,
         type: Sequelize.DATE
       },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE
+      unique_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
       },
-      status: {
+      is_active: {
         allowNull: false,
         type: Sequelize.ENUM('0', '1'),
         defaultValue: '1',
-        comment: '0 = Deleted, 1 = Active'
+        comment: '1 = Active, 0 = Deleted'
       }
+    });
+
+    // Add Index
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: 'idx_is_active_user_status_app'
     });
 
     // Adding constraint
     await queryInterface.addConstraint(tableName, {
-      fields: ['id_user'],
+      fields: ['user_id'],
       type: 'foreign key',
       name: 'fk_user_status_app_user',
       references: {
-        table: 'user',
-        field: 'id_user'
+        table: 'ms_user',
+        field: 'user_id'
       },
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION'
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
     });
 
     await queryInterface.addConstraint(tableName, {
-      fields: ['id_status_app'],
+      fields: ['status_app_id'],
       type: 'foreign key',
       name: 'fk_user_status_app',
       references: {
-        table: 'status_app',
-        field: 'id_status_app'
+        table: 'ms_status_app',
+        field: 'status_app_id'
       },
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION'
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
     });
   },
   down: async (queryInterface, Sequelize) => {

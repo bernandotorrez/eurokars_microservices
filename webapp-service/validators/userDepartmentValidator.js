@@ -1,10 +1,12 @@
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const BadRequestError = require('../exceptions/BadRequestError');
 const { convertMessage } = require('../utils/globalFunction');
 
 const createSchema = Joi.object({
-  id_user: Joi.string().min(1).max(50).required(),
-  id_department: Joi.string().min(1).max(50).required()
+  user_id: Joi.string().min(1).max(50).required(),
+  department_id: Joi.string().min(1).max(369).required().messages({
+    'string.max': 'Maximal 10 ID Department per Request'
+  })
 });
 
 const create = (payload) => {
@@ -17,7 +19,14 @@ const create = (payload) => {
 };
 
 const updateSchema = Joi.object({
-  id_department: Joi.string().min(1).max(50).required()
+  department_id: Joi.object({
+    insert: Joi.string().min(1).max(369).allow('').messages({
+      'string.max': 'Maximal 10 ID Department per Request'
+    }),
+    remove: Joi.string().min(1).max(369).allow('').messages({
+      'string.max': 'Maximal 10 ID Department per Request'
+    })
+  })
 });
 
 const update = (payload) => {
