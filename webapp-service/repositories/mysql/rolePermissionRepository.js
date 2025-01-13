@@ -166,6 +166,9 @@ class RolePermissionRepository {
     //   ]
     // });
 
+    // Include related models
+    querySql.include = this._includeModels;
+
     const data = await this._model.findAndCountAll(querySql);
 
     return data;
@@ -185,11 +188,12 @@ class RolePermissionRepository {
   async getOne(id = '') {
     if (id === '') throw new BadRequestError('ID Role Permission Required');
 
-    const data = await this._model.findOne({
-      where: {
-        unique_id: id
-      }
-    });
+    const querySql = {};
+
+    querySql.where = { unique_id: id };
+    querySql.include = this._includeModels;
+
+    const data = await this._model.findOne(querySql);
 
     if (!data) throw new NotFoundError('Role Permission not found');
 

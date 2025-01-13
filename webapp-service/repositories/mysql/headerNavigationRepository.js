@@ -25,6 +25,8 @@ class HeaderNavigationRepository {
       'url',
       'remark',
       'is_other_sidebar',
+      'level',
+      'screen_id',
       'created_date'
     ];
     this._includeModels = [

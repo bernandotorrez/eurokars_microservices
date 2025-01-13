@@ -20,6 +20,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'parent',
         scope: { is_active: '1' }
       });
+
+      HeaderNavigation.belongsToMany(models.MenuGroup, {
+        through: models.MenuMenuGroup,
+        foreignKey: 'header_navigation_id',
+        otherKey: 'menu_group_id',
+      });
     }
   };
   HeaderNavigation.init({
