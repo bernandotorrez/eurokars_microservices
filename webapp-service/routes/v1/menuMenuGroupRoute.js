@@ -11,9 +11,15 @@ const menuMenuGroupRepository = require('../../repositories/mysql/menuMenuGroupR
 const menuMenuGroupValidator = require('../../validators/menuMenuGroupValidator');
 
 router.get('/', async (req, res) => {
-  const { search, sort, page } = req.query;
+  const { search, sort, page, menu_group_id: menuGroupId } = req.query;
 
-  const menuMenuGroups = await menuMenuGroupRepository.getAll({ search, sort, page });
+  let menuMenuGroups;
+
+  if (menuGroupId !== '' && typeof menuGroupId !== 'undefined') {
+    menuMenuGroups = await menuMenuGroupRepository.getAllByMenuGroup(menuGroupId);
+  } else {
+    menuMenuGroups = await menuMenuGroupRepository.getAll({ search, sort, page, menuGroupId });
+  }
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

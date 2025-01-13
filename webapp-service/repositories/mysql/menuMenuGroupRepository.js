@@ -1,5 +1,5 @@
 const { MenuMenuGroup, MenuGroup, HeaderNavigation, sequelize } = require('../../models');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
@@ -10,6 +10,7 @@ class MenuMenuGroupRepository {
   constructor () {
     this._model = MenuMenuGroup;
     this._menuGroupModel = MenuGroup;
+    this._headerNavigationModel = HeaderNavigation;
     this._primaryKey = this._model.primaryKeyAttribute;
     this._menuGroupPrimaryKey = this._menuGroupModel.primaryKeyAttribute;
     this._sortBy = this._primaryKey;
@@ -22,6 +23,7 @@ class MenuMenuGroupRepository {
       'menu_group_code',
       'menu_group_name',
       'menu_group_description',
+      'menu_group_id',
       'created_date'
     ];
     this._menuGroupIncludeModels = [
@@ -40,9 +42,19 @@ class MenuMenuGroupRepository {
         ]
       }
     ];
+    this._modelInclude = [
+      {
+        model: HeaderNavigation.scope('withoutTemplateFields'),
+        as: 'header_navigation'
+      },
+      {
+        model: MenuGroup.scope('withoutTemplateFields'),
+        as: 'menu_group'
+      }
+    ]
   }
 
-  async getAll ({ search, sort, page }) {
+  async getAll ({ search, sort, page, menuGroupId }) {
     const querySql = {};
 
     // Sorting logic
@@ -107,12 +119,35 @@ class MenuMenuGroupRepository {
       }
     }
 
+    // Get Menu Menu Group by Menu Group
+    if (menuGroupId !== '' && typeof menuGroupId !== 'undefined') {
+      querySql.where = {
+        '$menu_menu_group.menu_group_id$': menuGroupId
+      }
+    }
+
     querySql.distinct = true;
     querySql.col = this._menuGroupPrimaryKey;
     querySql.include = this._menuGroupIncludeModels;
     querySql.subQuery = false;
 
     const data = await this._menuGroupModel.findAndCountAll(querySql);
+
+    return data;
+  }
+
+  async getAllByMenuGroup (menuGroupId) {
+    const querySql = {};
+
+    querySql.include = {
+      model: MenuGroup,
+      through: { attributes: [] },
+      where: {
+        menu_group_id: menuGroupId
+      }
+    };
+
+    const data = await this._headerNavigationModel.findAndCountAll(querySql);
 
     return data;
   }
