@@ -114,29 +114,57 @@ const convertMessage = (messages) => {
   return data;
 };
 
-function objectToQueryString (obj) {
+const objectToQueryString = (obj) => {
   return Object.keys(obj).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`).join('&');
 }
 
-function capitalizeWords (str) {
+const capitalizeWords = (str) => {
   return str.replace(/\b\w/g, function (char) {
     return char.toUpperCase();
   });
 }
 
 // Function to encode bytes to base64url format
-function base64URLEncode (buffer) {
+const base64URLEncode = (buffer) => {
   return buffer.toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
 
-function generatePkcePair () {
+const generatePkcePair = () => {
   const verifier = crypto.randomBytes(32).toString('hex');
   let challenge = crypto.createHash('sha256').update(verifier).digest('base64');
   challenge = challenge.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return { verifier, challenge };
+  return {
+    verifier,
+    challenge
+  };
+}
+
+const formatToFourDigits = (num) => {
+  // Ensure the number is an integer
+  if (!Number.isInteger(num)) {
+    throw new Error("Input must be an integer.");
+  }
+
+  // If the number is 0, return "0001"
+  if (num === 0) {
+    return "0001";
+  }
+
+  // Ensure the number is within the range of 1 to 9999
+  if (num < 1 || num > 9999) {
+    throw new Error("Input must be an integer between 1 and 9999.");
+  }
+
+  // Convert the number to a string and pad it with leading zeros
+  return num.toString().padStart(4, '0');
+}
+
+const formatRupiah = (amount) => {
+  if (amount === null || amount === undefined) return '0';
+  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' IDR';
 }
 
 module.exports = {
@@ -152,5 +180,7 @@ module.exports = {
   objectToQueryString,
   capitalizeWords,
   base64URLEncode,
-  generatePkcePair
+  generatePkcePair,
+  formatToFourDigits,
+  formatRupiah
 };

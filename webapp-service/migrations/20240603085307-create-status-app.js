@@ -61,7 +61,7 @@ module.exports = {
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_status_app'
+      name: `idx_is_active_${tableName}`
     });
   },
 

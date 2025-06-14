@@ -59,6 +59,37 @@ module.exports = {
       }
     });
 
+    // Index
+    await queryInterface.addIndex(tableName, {
+      fields: ['company_id'],
+      name: `idx_company_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['brand_id'],
+      name: `idx_brand_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['branch_id'],
+      name: `idx_branch_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['department_id'],
+      name: `idx_department_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['division_id'],
+      name: `idx_division_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: `idx_is_active_${tableName}`
+    });
+
     // Adding constraint
     await queryInterface.addConstraint(tableName, {
       fields: ['company_id'],
@@ -118,12 +149,6 @@ module.exports = {
       },
       onDelete: 'RESTRICT',
       onUpdate: 'RESTRICT'
-    });
-
-    // Index
-    await queryInterface.addIndex(tableName, {
-      fields: ['is_active'],
-      name: 'idx_is_active_company_detail'
     });
   },
 

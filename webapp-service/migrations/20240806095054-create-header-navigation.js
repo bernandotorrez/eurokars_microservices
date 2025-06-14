@@ -77,32 +77,32 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active'
+      name: `idx_is_active_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['parent_id'],
-      name: 'idx_parent_id'
+      name: `idx_parent_id_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_other_sidebar'],
-      name: 'idx_is_other_sidebar'
+      name: `idx_is_other_sidebar_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['sort_number'],
-      name: 'idx_sort_number'
+      name: `idx_sort_number_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['header_navigation_name'],
-      name: 'idx_header_navigation_name'
+      name: `idx_header_navigation_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['level'],
-      name: 'idx_level'
+      name: `idx_level_${tableName}`
     });
 
     // Adding Constraint

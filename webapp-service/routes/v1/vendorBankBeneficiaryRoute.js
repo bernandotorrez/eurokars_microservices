@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const bank = await vendorBankBeneficiaryRepository.add(oid, req.body);
 
-  bank.vendor_beneficiary_id = bank.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

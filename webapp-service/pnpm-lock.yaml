@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@prisma/client':
+        specifier: 6.2.0
+        version: 6.2.0
       amqplib:
         specifier: ^0.10.4
         version: 0.10.4
@@ -507,6 +510,15 @@ packages:
 
   '@pm2/pm2-version-check@1.0.4':
     resolution: {integrity: sha512-SXsM27SGH3yTWKc2fKR4SYNxsmnvuBQ9dd6QHtEWmiZ/VqaOYPAIlS8+vMcn27YLtAEBGvNRSh3TPNvtjZgfqA==}
+
+  '@prisma/client@6.2.0':
+    resolution: {integrity: sha512-tmEgej4OR+Wqk8MwZQcu58JzA1iFPmi/z7VPEmjTuTIQDLqHQZ6+MDRLL4wgNJXJkMHUKD9yMD5AkwYH0/0hKA==}
+    engines: {node: '>=18.18'}
+    peerDependencies:
+      prisma: '*'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
 
   '@redis/bloom@1.2.0':
     resolution: {integrity: sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==}
@@ -3999,6 +4011,8 @@ snapshots:
       debug: 4.3.7(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
+
+  '@prisma/client@6.2.0': {}
 
   '@redis/bloom@1.2.0(@redis/client@1.6.0)':
     dependencies:

@@ -179,27 +179,39 @@ class UserStatusAppRepository {
     const arraySuccess = [];
 
     for (const statusAppId of splitstatusAppId) {
-      const checkDuplicate = await this.checkDuplicate(statusAppId, userId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(statusAppId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            status_app_id: statusAppId,
-            user_id: userId,
-            created_by: oid,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(statusAppId);
-        } catch (error) {
-          arrayFailed.push(statusAppId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_user_status_app(:oid, :userId, :statusAppId, :screenId, :uniqueId);',
+        {
+          replacements: { oid, userId, statusAppId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(statusAppId);
+          } else if (return_code === 404) {
+            arrayFailed.push(statusAppId);
+          } else if (return_code === 400) {
+            arrayFailed.push(statusAppId);
+          } else {
+            arrayFailed.push(statusAppId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(statusAppId);
+        }
+      } else {
+        arrayFailed.push(statusAppId);
       }
     }
 
@@ -236,9 +248,6 @@ class UserStatusAppRepository {
   }
 
   async update (userId, oid, params) {
-    // Check Data if Exist
-    await this.getOneUser(userId);
-
     const { status_app_id: statusAppId, screen_id: screenId } = params;
     const { insert, remove } = statusAppId;
 
@@ -252,27 +261,39 @@ class UserStatusAppRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const statusAppId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(statusAppId, userId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(statusAppId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              status_app_id: statusAppId,
-              user_id: userId,
-              created_by: oid,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(statusAppId);
-          } catch (error) {
-            arrayFailed.push(statusAppId);
+        // Call SP
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_user_status_app(:oid, :userId, :statusAppId, :screenId, :uniqueId);',
+          {
+            replacements: { oid, userId, statusAppId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(statusAppId);
+            } else if (return_code === 404) {
+              arrayFailed.push(statusAppId);
+            } else if (return_code === 400) {
+              arrayFailed.push(statusAppId);
+            } else {
+              arrayFailed.push(statusAppId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(statusAppId);
+          }
+        } else {
+          arrayFailed.push(statusAppId);
         }
       }
     }
@@ -281,21 +302,36 @@ class UserStatusAppRepository {
     if (splitRemove.length > 0) {
       for (const statusAppId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: oid,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              status_app_id: statusAppId,
-              user_id: userId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_user_status_app(:oid, :userId, :statusAppId);',
+            {
+              replacements: { oid, userId, statusAppId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(statusAppId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(statusAppId);
+              } else if (return_code === 404) {
+                arrayFailed.push(statusAppId);
+              } else if (return_code === 400) {
+                arrayFailed.push(statusAppId);
+              } else {
+                arrayFailed.push(statusAppId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(statusAppId);
+            }
           } else {
             arrayFailed.push(statusAppId);
           }

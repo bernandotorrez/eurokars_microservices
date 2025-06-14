@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const company = await companyRepository.add(oid, req.body);
 
-  company.company_id = company.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

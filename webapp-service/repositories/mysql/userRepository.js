@@ -15,7 +15,10 @@ const {
   UserMenuGroup,
   MenuGroup,
   MenuMenuGroup,
-  HeaderNavigation
+  HeaderNavigation,
+  RolePermission,
+  Role,
+  UserRole
 } = require('../../models');
 const { v4: uuidv4 } = require('uuid');
 
@@ -33,6 +36,10 @@ class UserRepository {
     this._model = User;
     this._modelLoginHistory = UserLoginHistory;
     this._modelUserSession = UserSession;
+    this._modelRolePermission = RolePermission;
+    this._modelHeaderNavigation = HeaderNavigation;
+    this._modelUserMenuGroup = UserMenuGroup;
+    this._modelUserRole = UserRole;
     this._primaryKey = this._model.primaryKeyAttribute;
     this._sortBy = this._primaryKey;
     this._sort = 'ASC';
@@ -212,6 +219,76 @@ class UserRepository {
     return data;
   }
 
+  async getRolePermissionHierarchy (userId) {
+    const userMenuGroup = await this._modelUserMenuGroup.findAll({
+      where: {
+        user_id: userId,
+        is_active: '1'
+      }
+    });
+
+    const userRole = await this._modelUserRole.findAll({
+      where: {
+        user_id: userId,
+        is_active: '1'
+      }
+    });
+
+    const mapUserMenuGroup = userMenuGroup.map(userMenuGroup => userMenuGroup.menu_group_id);
+    const mapUserRole = userRole.map(userRole => userRole.role_id);
+
+    const querySql = {};
+
+    querySql.raw = true;
+    querySql.include = [
+      {
+        model: MenuGroup.scope('withoutTemplateFields'),
+        as: 'menu_group',
+        required: false
+      },
+      {
+        model: Role.scope('withoutTemplateFields'),
+        as: 'role',
+        required: false
+      },
+      {
+        model: HeaderNavigation.scope('withoutTemplateFields'),
+        as: 'header_navigation',
+        required: false
+      }
+    ];
+    querySql.where = {
+      menu_group_id: {
+        [Op.in]: mapUserMenuGroup
+      },
+      role_id: {
+        [Op.in]: mapUserRole
+      }
+    };
+
+    const data = await this._modelRolePermission.findAll(querySql);
+
+    const arrayParentMenu = [...new Set(await data.map(item => item["header_navigation.parent_id"]))];
+
+    const dataParentMenu = await this._modelHeaderNavigation.findAll({
+      where: {
+        header_navigation_id: {
+          [Op.in]: arrayParentMenu
+        }
+      },
+      raw: true
+    });
+
+    const result = dataParentMenu.map(parent => {
+      return {
+          ...parent,
+          children: data.filter(child => child['header_navigation.parent_id'] === parent.header_navigation_id)
+      };
+    });
+
+    return result
+  }
+
   async registerSSO ({
     uniqueId,
     mail,
@@ -308,6 +385,9 @@ class UserRepository {
     const user = await this._model.findOne(querySql);
 
     if (!user) throw new NotFoundError('User not found');
+
+    const rolePermission = await this.getRolePermissionHierarchy(id);
+    user.setDataValue('role_permission', rolePermission);
 
     return user;
   }

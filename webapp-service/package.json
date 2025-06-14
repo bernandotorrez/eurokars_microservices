@@ -23,6 +23,7 @@
   "author": "Bernand Dayamuntari Hermawan",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "6.2.0",
     "amqplib": "^0.10.4",
     "app-root-path": "^3.1.0",
     "axios": "^1.7.7",

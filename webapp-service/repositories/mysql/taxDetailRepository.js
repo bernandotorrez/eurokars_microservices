@@ -150,23 +150,70 @@ class TaxDetailRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(taxId, percentage);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`Tax already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        tax_id: taxId,
-        tax_detail_description: taxDetailDescription,
-        percentage,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_tax_detail(:userId, :taxId, :taxDetailDescription, :percentage, :screenId, :uniqueId);',
+        {
+          replacements: { userId, taxId, taxDetailDescription, percentage, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          tax_detail_id,
+          tax_id,
+          tax_detail_description,
+          percentage,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          tax_detail_id,
+          tax_id,
+          tax_detail_description,
+          percentage,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Tax Detail Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Tax Detail Failed');
     }
   }
@@ -197,32 +244,58 @@ class TaxDetailRepository {
   }
 
   async update(id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const {
       tax_id: taxId,
       tax_detail_description: taxDetailDescription,
       percentage,
     } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, taxId, percentage);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`Tax already Created`);
-
     try {
-      return await this._model.update({
-        tax_id: taxId,
-        tax_detail_description: taxDetailDescription,
-        percentage,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_tax_detail(:userId, :taxId, :taxDetailDescription, :percentage, :uniqueId);',
+        {
+          replacements: { userId, taxId, taxDetailDescription, percentage, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Tax Detail Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Tax Detail Failed');
     }
   }

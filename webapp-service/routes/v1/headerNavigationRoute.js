@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const headerNavigation = await headerNavigationRepository.add(oid, req.body);
 
-  headerNavigation.header_navigation_id = headerNavigation.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,
@@ -60,9 +58,7 @@ router.put('/:id', async (req, res) => {
 
   const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
 
-  const headerNavigation = await headerNavigationRepository.update(id, oid, req.body);
-
-  headerNavigation.header_navigation_id = headerNavigation.null;
+  await headerNavigationRepository.update(id, oid, req.body);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

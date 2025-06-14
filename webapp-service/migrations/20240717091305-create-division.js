@@ -56,12 +56,12 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['division_name'],
-      name: 'idx_division_name'
+      name: `idx_division_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_division'
+      name: `idx_is_active_${tableName}`
     });
 
     // Constraint

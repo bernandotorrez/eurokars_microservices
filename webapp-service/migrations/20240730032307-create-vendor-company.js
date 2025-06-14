@@ -46,6 +46,22 @@ module.exports = {
       }
     });
 
+    // Index
+    await queryInterface.addIndex(tableName, {
+      fields: ['vendor_id'],
+      name: `idx_vendor_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['company_id'],
+      name: `idx_company_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: `idx_is_active_${tableName}`
+    });
+
     // Adding constraint
     await queryInterface.addConstraint(tableName, {
       fields: ['vendor_id'],

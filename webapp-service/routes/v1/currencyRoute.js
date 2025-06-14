@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const currency = await currencyRepository.add(oid, req.body);
 
-  currency.currency_id = currency.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

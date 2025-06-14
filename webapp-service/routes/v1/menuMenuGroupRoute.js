@@ -49,8 +49,6 @@ router.post('/', async (req, res) => {
 
   const menuMenuGroup = await menuMenuGroupRepository.add(oid, req.body);
 
-  menuMenuGroup.user_status_app_id = menuMenuGroup.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

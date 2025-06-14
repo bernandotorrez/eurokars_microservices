@@ -107,21 +107,66 @@ class BrandRepository {
   async add (userId, params) {
     const { brand_name: brandName, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(brandName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${brandName} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        brand_name: brandName,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_brand(:userId, :brandName, :screenId, :uniqueId);',
+        {
+          replacements: { userId, brandName, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          brand_id,
+          brand_name,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          brand_id,
+          brand_name,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Brand Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Brand Failed');
     }
   }
@@ -150,26 +195,54 @@ class BrandRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const { brand_name: brandName } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, brandName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${brandName} already Created`);
-
     try {
-      return await this._model.update({
-        brand_name: brandName,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_brand(:userId, :brandName, :uniqueId);',
+        {
+          replacements: { userId, brandName, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Brand Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Brand Failed');
     }
   }

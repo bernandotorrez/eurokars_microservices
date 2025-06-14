@@ -23,12 +23,12 @@ module.exports = (sequelize, DataTypes) => {
     category_rfa_code: {
       allowNull: false,
       type: DataTypes.STRING(10),
-      comment: 'Example : ADM01'
+      comment: 'Example : RFA01'
     },
     category_rfa_name: {
       allowNull: false,
       type: DataTypes.STRING(50),
-      comment: 'Example : Admin'
+      comment: 'Example : Request For Approval'
     },
     category_rfa_description: {
       allowNull: false,

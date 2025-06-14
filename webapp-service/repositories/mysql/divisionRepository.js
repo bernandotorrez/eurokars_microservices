@@ -128,23 +128,68 @@ class DivisionRepository {
   async add (userId, params) {
     const { department_id: departmentId, division_name: divisionName, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(departmentId, divisionName);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        department_id: departmentId,
-        division_name: divisionName,
-        screen_id: screenId,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_division(:userId, :departmentId, :divisionName, :screenId, :uniqueId);',
+        {
+          replacements: { userId, departmentId, divisionName, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          division_id,
+          department_id,
+          division_name,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          division_id,
+          department_id,
+          division_name,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Division Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Division Failed');
     }
   }
@@ -180,24 +225,55 @@ class DivisionRepository {
 
     const { department_id: departmentId, division_name: divisionName } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, departmentId, divisionName);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Division already Created');
-
     try {
-      return await this._model.update({
-        department_id: departmentId,
-        division_name: divisionName,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_division(:userId, :departmentId, :divisionName, :uniqueId);',
+        {
+          replacements: { userId, departmentId, divisionName, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Add Division Failed');
+      }
     } catch (error) {
-      throw new UnprocessableEntityError('Update Division Failed');
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
+      throw new UnprocessableEntityError('Add Division Failed');
     }
+
   }
 
   async delete (id, userId) {

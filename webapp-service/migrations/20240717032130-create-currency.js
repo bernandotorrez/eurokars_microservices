@@ -56,12 +56,17 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['currency_code'],
-      name: 'idx_currency_code'
+      name: `idx_currency_code_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['currency_name'],
+      name: `idx_currency_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_currency'
+      name: `idx_is_active_${tableName}`
     });
   },
 

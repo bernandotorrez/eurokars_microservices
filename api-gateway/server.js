@@ -59,6 +59,11 @@ const categoryRfaServiceV1 = require('./routes/v1/webAppService/categoryRfaServi
 const userMenuGroupServiceV1 = require('./routes/v1/webAppService/userMenuGroupService');
 const userRoleServiceV1 = require('./routes/v1/webAppService/userRoleService');
 const rolePermissionServiceV1 = require('./routes/v1/webAppService/rolePermissionService');
+const coaServiceV1 = require('./routes/v1/webAppService/coaService');
+const masterBudgetServiceV1 = require('./routes/v1/webAppService/masterBudgetService');
+const subCoaServiceV1 = require('./routes/v1/webAppService/subCoaService');
+const categoryBudgetServiceV1 = require('./routes/v1/webAppService/categoryBudgetService');
+const configurationServiceV1 = require('./routes/v1/webAppService/configurationService');
 
 const app = express();
 
@@ -79,6 +84,18 @@ if (!process.env.JWT_PRIVATE_KEY) {
   console.error('FATAL ERROR : jwtPrivateKey not set');
   process.exit(1);
 }
+
+// Middleware X-Forwarded-For
+app.use((req, res, next) => {
+  // Tell Express to trust proxies so req.ip will get the real client IP
+  app.set('trust proxy', true);
+  
+  // Store the original client IP address in a request-level variable
+  req.clientIp = req.ip;
+  
+  // Continue to the next middleware
+  next();
+});
 
 // List all Routes
 app.use('/api-gateway/v1/vehicle', rateLimit, vehicleServiceV1);
@@ -120,6 +137,11 @@ app.use('/api-gateway/v1/webapp/category-rfa', rateLimit, categoryRfaServiceV1);
 app.use('/api-gateway/v1/webapp/user-menu-group', rateLimit, userMenuGroupServiceV1);
 app.use('/api-gateway/v1/webapp/user-role', rateLimit, userRoleServiceV1);
 app.use('/api-gateway/v1/webapp/role-permission', rateLimit, rolePermissionServiceV1);
+app.use('/api-gateway/v1/webapp/coa', rateLimit, coaServiceV1);
+app.use('/api-gateway/v1/webapp/budget', rateLimit, masterBudgetServiceV1);
+app.use('/api-gateway/v1/webapp/sub-coa', rateLimit, subCoaServiceV1);
+app.use('/api-gateway/v1/webapp/category-budget', rateLimit, categoryBudgetServiceV1);
+app.use('/api-gateway/v1/webapp/configuration', rateLimit, configurationServiceV1);
 
 // Error Handler
 process.on('uncaughtException', (ex) => {

@@ -15,6 +15,27 @@ router.get('/', async (req, res) => {
   return res.json(data.data);
 });
 
+router.get('/company/:companyId', async (req, res) => {
+  const { companyId } = req.params;
+
+  const data = await api.get(`/v1/${route}/company/${companyId}`, getHeaders(req));
+  return res.json(data.data);
+});
+
+router.get('/company/:companyId/brand/:brandId', async (req, res) => {
+  const { companyId, brandId } = req.params;
+
+  const data = await api.get(`/v1/${route}/company/${companyId}/brand/${brandId}`, getHeaders(req));
+  return res.json(data.data);
+});
+
+router.get('/company/:companyId/brand/:brandId/branch/:branchId', async (req, res) => {
+  const { companyId, brandId, branchId } = req.params;
+
+  const data = await api.get(`/v1/${route}/company/${companyId}/brand/${brandId}/branch/${branchId}`, getHeaders(req));
+  return res.json(data.data);
+});
+
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   const data = await api.get(`/v1/${route}/${id}`, getHeaders(req));

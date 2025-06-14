@@ -112,23 +112,70 @@ class BankRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(bankName, localCode, swiftCode);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${bankName} - ${localCode} - ${swiftCode} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        bank_name: bankName,
-        local_code: localCode,
-        swift_code: swiftCode,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_bank(:userId, :bankName, :localCode, :swiftCode, :screenId, :uniqueId);',
+        {
+          replacements: { userId, bankName, localCode, swiftCode, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          bank_id,
+          bank_name,
+          local_code,
+          swift_code,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          bank_id,
+          bank_name,
+          local_code,
+          swift_code,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Bank Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Bank Failed');
     }
   }
@@ -165,28 +212,58 @@ class BankRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
-    const { bank_name: bankName, local_code: localCode, swift_code: swiftCode } = params;
-
-    const checkDuplicate = await this.checkDuplicateEdit(id, bankName, localCode, swiftCode);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${bankName} already Created`);
+    const {
+      bank_name: bankName,
+      local_code: localCode,
+      swift_code: swiftCode
+    } = params;
 
     try {
-      return await this._model.update({
-        bank_name: bankName,
-        local_code: localCode,
-        swift_code: swiftCode,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_bank(:userId, :bankName, :localCode, :swiftCode, :uniqueId);',
+        {
+          replacements: { userId, bankName, localCode, swiftCode, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Bank Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Bank Failed');
     }
   }

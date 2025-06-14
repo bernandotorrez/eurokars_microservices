@@ -107,23 +107,68 @@ class CompanyRepository {
   async add (userId, params) {
     const { company_name: companyName, company_code: companyCode, tax_id: taxId, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(companyName, companyCode, taxId);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${companyName} - ${companyCode} - ${taxId} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        company_name: companyName,
-        company_code: companyCode,
-        tax_id: taxId,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_company(:userId, :companyName, :companyCode, :taxId, :screenId, :uniqueId);',
+        {
+          replacements: { userId, companyName, companyCode: companyCode.toUpperCase(), taxId, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          company_id,
+          company_name,
+          company_code,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          company_id,
+          company_name,
+          company_code,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Company Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Company Failed');
     }
   }
@@ -160,28 +205,54 @@ class CompanyRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const { company_name: companyName, company_code: companyCode, tax_id: taxId } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, companyName, companyCode, taxId);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${companyName} - ${companyCode} - ${taxId} already Created`);
-
     try {
-      return await this._model.update({
-        company_name: companyName,
-        company_code: companyCode,
-        tax_id: taxId,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_company(:userId, :companyName, :companyCode, :taxId, :uniqueId);',
+        {
+          replacements: { userId, companyName, companyCode: companyCode.toUpperCase(), taxId, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Company Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Company Failed');
     }
   }

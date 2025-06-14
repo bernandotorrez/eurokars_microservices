@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
+const ConflictError = require('../../exceptions/ConflictError');
 const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
@@ -193,27 +194,39 @@ class VendorCompanyRepository {
     const arraySuccess = [];
 
     for (const companyId of splitcompanyId) {
-      const checkDuplicate = await this.checkDuplicate(companyId, vendorId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(companyId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            company_id: companyId,
-            vendor_id: vendorId,
-            created_by: userId,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(companyId);
-        } catch (error) {
-          arrayFailed.push(companyId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_vendor_company(:userId, :vendorId, :companyId, :screenId, :uniqueId);',
+        {
+          replacements: { userId, vendorId, companyId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(companyId);
+          } else if (return_code === 404) {
+            arrayFailed.push(companyId);
+          } else if (return_code === 400) {
+            arrayFailed.push(companyId);
+          } else {
+            arrayFailed.push(companyId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(companyId);
+        }
+      } else {
+        arrayFailed.push(companyId);
       }
     }
 
@@ -250,9 +263,6 @@ class VendorCompanyRepository {
   }
 
   async update (vendorId, userId, params) {
-    // Check Data if Exist
-    await this.getOneVendor(vendorId);
-
     const { company_id: companyId, screen_id: screenId } = params;
     const { insert, remove } = companyId;
 
@@ -266,27 +276,38 @@ class VendorCompanyRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const companyId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(companyId, vendorId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(companyId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              company_id: companyId,
-              vendor_id: vendorId,
-              created_by: userId,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(companyId);
-          } catch (error) {
-            arrayFailed.push(companyId);
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_vendor_company(:userId, :vendorId, :companyId, :screenId, :uniqueId);',
+          {
+            replacements: { userId, vendorId, companyId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(companyId);
+            } else if (return_code === 404) {
+              arrayFailed.push(companyId);
+            } else if (return_code === 400) {
+              arrayFailed.push(companyId);
+            } else {
+              arrayFailed.push(companyId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(companyId);
+          }
+        } else {
+          arrayFailed.push(companyId);
         }
       }
     }
@@ -295,21 +316,36 @@ class VendorCompanyRepository {
     if (splitRemove.length > 0) {
       for (const companyId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: userId,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              company_id: companyId,
-              vendor_id: vendorId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_vendor_company(:userId, :vendorId, :companyId);',
+            {
+              replacements: { userId, vendorId, companyId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(companyId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(companyId);
+              } else if (return_code === 404) {
+                arrayFailed.push(companyId);
+              } else if (return_code === 400) {
+                arrayFailed.push(companyId);
+              } else {
+                arrayFailed.push(companyId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(companyId);
+            }
           } else {
             arrayFailed.push(companyId);
           }

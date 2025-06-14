@@ -216,27 +216,39 @@ class UserRoleRepository {
     const arraySuccess = [];
 
     for (const roleId of splitRoleId) {
-      const checkDuplicate = await this.checkDuplicate(roleId, userId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(roleId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            role_id: roleId,
-            user_id: userId,
-            created_by: oid,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(roleId);
-        } catch (error) {
-          arrayFailed.push(roleId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_user_role(:oid, :userId, :roleId, :screenId, :uniqueId);',
+        {
+          replacements: { oid, userId, roleId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(roleId);
+          } else if (return_code === 404) {
+            arrayFailed.push(roleId);
+          } else if (return_code === 400) {
+            arrayFailed.push(roleId);
+          } else {
+            arrayFailed.push(roleId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(roleId);
+        }
+      } else {
+        arrayFailed.push(roleId);
       }
     }
 
@@ -302,9 +314,6 @@ class UserRoleRepository {
    * @return {Promise<Object>} - Promise with the result of updates categorized into success, duplicated, and failed.
    */
   async update (userId, oid, params) {
-    // Check Data if Exist
-    await this.getOneUser(userId);
-
     const { role_id: roleId, screen_id: screenId } = params;
     const { insert, remove } = roleId;
 
@@ -318,27 +327,39 @@ class UserRoleRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const roleId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(roleId, userId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(roleId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              role_id: roleId,
-              user_id: userId,
-              created_by: oid,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(roleId);
-          } catch (error) {
-            arrayFailed.push(roleId);
+        // Call SP
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_user_role(:oid, :userId, :roleId, :screenId, :uniqueId);',
+          {
+            replacements: { oid, userId, roleId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(roleId);
+            } else if (return_code === 404) {
+              arrayFailed.push(roleId);
+            } else if (return_code === 400) {
+              arrayFailed.push(roleId);
+            } else {
+              arrayFailed.push(roleId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(roleId);
+          }
+        } else {
+          arrayFailed.push(roleId);
         }
       }
     }
@@ -347,21 +368,36 @@ class UserRoleRepository {
     if (splitRemove.length > 0) {
       for (const roleId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: oid,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              role_id: roleId,
-              user_id: userId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_user_role(:oid, :userId, :roleId);',
+            {
+              replacements: { oid, userId, roleId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(roleId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(roleId);
+              } else if (return_code === 404) {
+                arrayFailed.push(roleId);
+              } else if (return_code === 400) {
+                arrayFailed.push(roleId);
+              } else {
+                arrayFailed.push(roleId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(roleId);
+            }
           } else {
             arrayFailed.push(roleId);
           }

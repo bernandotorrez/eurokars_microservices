@@ -194,7 +194,7 @@ class HeaderNavigationRepository {
     };
   }
 
-  async add (userId, params) {
+  async add(userId, params) {
     const {
       parent_id: idParent,
       header_navigation_name: name,
@@ -207,30 +207,91 @@ class HeaderNavigationRepository {
       screen_id_input: screenIdInput
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(name, url, level, screenIdInput);
-
-    await this.checkLevelValidation(idParent, level);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    // Generate UUID
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        parent_id: idParent,
-        header_navigation_name: name,
-        sort_number: sortNumber,
-        url,
-        remark,
-        is_other_sidebar: isOtherSidebar,
-        level,
-        screen_id: screenIdInput,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_header_navigation(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        {
+          replacements: [
+            userId,
+            idParent || null,
+            name,
+            sortNumber,
+            url,
+            remark,
+            isOtherSidebar,
+            level,
+            screenId,
+            screenIdInput,
+            uniqueId
+          ],
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          header_navigation_id,
+          parent_id,
+          header_navigation_name,
+          sort_number,
+          url,
+          remark,
+          is_other_sidebar,
+          level,
+          screen_id,
+          screen_id_input,
+          unique_id
+        } = results;
+
+        const data = {
+          header_navigation_id,
+          parent_id,
+          header_navigation_name,
+          sort_number,
+          url,
+          remark,
+          is_other_sidebar,
+          level,
+          screen_id,
+          screen_id_input,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Header Navigation Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Header Navigation Failed');
     }
   }
@@ -307,9 +368,6 @@ class HeaderNavigationRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOneByUniqueId(id);
-
     const {
       parent_id: idParent,
       header_navigation_name: name,
@@ -320,29 +378,63 @@ class HeaderNavigationRepository {
       level
     } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, name, url, level);
-
-    await this.checkLevelValidation(idParent, level);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Header Navigation already Created');
-
     try {
-      return await this._model.update({
-        parent_id: idParent,
-        header_navigation_name: name,
-        sort_number: sortNumber,
-        url,
-        remark,
-        is_other_sidebar: isOtherSidebar,
-        level,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_header_navigation(:userId, :idParent, :name, :sortNumber, :url, :remark, :isOtherSidebar, :level, :uniqueId)',
+        {
+          replacements: {
+            userId,
+            idParent,
+            name,
+            sortNumber,
+            url,
+            remark,
+            isOtherSidebar,
+            level,
+            uniqueId: id
+          },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Header Navigation Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Header Navigation Failed');
     }
   }

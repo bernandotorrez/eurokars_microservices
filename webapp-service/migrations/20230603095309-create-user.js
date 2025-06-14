@@ -67,11 +67,6 @@ module.exports = {
 
     // Define indexes
     await queryInterface.addIndex(tableName, {
-      fields: ['email'],
-      name: 'idx_email'
-    });
-
-    await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
       name: 'idx_is_active_user'
     });

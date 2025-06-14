@@ -27,7 +27,7 @@ module.exports = {
     // Define indexes
     await queryInterface.addIndex(tableName, {
       fields: ['user_id'],
-      name: 'idx_user_id'
+      name: `idx_user_id_${tableName}`
     });
 
     // Constraint

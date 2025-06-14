@@ -142,26 +142,72 @@ class VendorBankBeneficiaryRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(bankId, vendorId, beneficiaryName);
-    const checkDuplicateAccountNumber = await this.checkDuplicateAccountNumber(accountNumber);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
-    if (checkDuplicateAccountNumber >= 1) throw new ConflictError('Account Number Duplicated');
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        vendor_id: vendorId,
-        bank_id: bankId,
-        beneficiary_name: beneficiaryName,
-        account_number: accountNumber,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_vendor_beneficiary(:userId, :vendorId, :bankId, :beneficiaryName, :accountNumber, :screenId, :uniqueId);',
+        {
+          replacements: { userId, vendorId, bankId, beneficiaryName, accountNumber, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          vendor_beneficiary_id,
+          vendor_id,
+          bank_id,
+          beneficiary_name,
+          account_number,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          vendor_beneficiary_id,
+          vendor_id,
+          bank_id,
+          beneficiary_name,
+          account_number,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Vendor Bank Beneficiary Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Vendor Bank Beneficiary Failed');
     }
   }
@@ -217,9 +263,6 @@ class VendorBankBeneficiaryRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const {
       vendor_id: vendorId,
       bank_id: bankId,
@@ -227,29 +270,52 @@ class VendorBankBeneficiaryRepository {
       account_number: accountNumber
     } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, bankId, vendorId, beneficiaryName);
-    const checkDuplicateAccountNumber = await this.checkDuplicateAccountNumberEdit(id, accountNumber);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
-    if (checkDuplicateAccountNumber >= 1) throw new ConflictError('Account Number Duplicated');
-
     try {
-      return await this._model.update(
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_vendor_beneficiary(:userId, :vendorId, :bankId, :beneficiaryName, :accountNumber, :uniqueId);',
         {
-          vendor_id: vendorId,
-          bank_id: bankId,
-          beneficiary_name: beneficiaryName,
-          account_number: accountNumber,
-          updated_by: userId,
-          updated_date: timeHis()
-        },
-        {
-          where: {
-            unique_id: id
-          }
+          replacements: { userId, vendorId, bankId, beneficiaryName, accountNumber, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
       );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Vendor Bank Beneficiary Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Vendor Bank Beneficiary Failed');
     }
   }

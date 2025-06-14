@@ -12,6 +12,7 @@ const { Op } = require('sequelize');
 const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
+const ConflictError = require('../../exceptions/ConflictError');
 const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
@@ -206,27 +207,39 @@ class VendorCompanyDepartmentRepository {
     const arraySuccess = [];
 
     for (const departmentId of splitdepartmentId) {
-      const checkDuplicate = await this.checkDuplicate(departmentId, vendorCompanyId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(departmentId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            department_id: departmentId,
-            vendor_company_id: vendorCompanyId,
-            created_by: userId,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(departmentId);
-        } catch (error) {
-          arrayFailed.push(departmentId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_vendor_company_department(:userId, :vendorCompanyId, :departmentId, :screenId, :uniqueId);',
+        {
+          replacements: { userId, vendorCompanyId, departmentId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(departmentId);
+          } else if (return_code === 404) {
+            arrayFailed.push(departmentId);
+          } else if (return_code === 400) {
+            arrayFailed.push(departmentId);
+          } else {
+            arrayFailed.push(departmentId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(departmentId);
+        }
+      } else {
+        arrayFailed.push(departmentId);
       }
     }
 
@@ -263,9 +276,6 @@ class VendorCompanyDepartmentRepository {
   }
 
   async update (vendorCompanyId, userId, params) {
-    // Check Data if Exist
-    await this.getOne(vendorCompanyId);
-
     const { department_id: departmentId, screen_id: screenId } = params;
     const { insert, remove } = departmentId;
 
@@ -279,27 +289,40 @@ class VendorCompanyDepartmentRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const departmentId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(departmentId, vendorCompanyId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(departmentId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              department_id: departmentId,
-              vendor_company_id: vendorCompanyId,
-              created_by: userId,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(departmentId);
-          } catch (error) {
-            arrayFailed.push(departmentId);
+        // Call SP
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_vendor_company_department(:userId, :vendorCompanyId, :departmentId, :screenId, :uniqueId);',
+          {
+            replacements: { userId, vendorCompanyId, departmentId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(departmentId);
+            } else if (return_code === 404) {
+              arrayFailed.push(departmentId);
+            } else if (return_code === 400) {
+              arrayFailed.push(departmentId);
+            } else {
+              arrayFailed.push(departmentId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(departmentId);
+          }
+
+        } else {
+          arrayFailed.push(departmentId);
         }
       }
     }
@@ -308,21 +331,36 @@ class VendorCompanyDepartmentRepository {
     if (splitRemove.length > 0) {
       for (const departmentId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: userId,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              department_id: departmentId,
-              vendor_company_id: vendorCompanyId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_vendor_company_department(:userId, :vendorCompanyId, :departmentId);',
+            {
+              replacements: { userId, vendorCompanyId, departmentId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(departmentId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(departmentId);
+              } else if (return_code === 404) {
+                arrayFailed.push(departmentId);
+              } else if (return_code === 400) {
+                arrayFailed.push(departmentId);
+              } else {
+                arrayFailed.push(departmentId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(departmentId);
+            }
           } else {
             arrayFailed.push(departmentId);
           }

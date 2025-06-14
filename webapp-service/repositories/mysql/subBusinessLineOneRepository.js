@@ -107,21 +107,66 @@ class SubBusinessLineOneRepository {
   async add (userId, params) {
     const { sub_business_line_1_name: subBusinessLineOneName, screen_id: screenId } = params;
 
-    const checkDuplicate = await this.checkDuplicate(subBusinessLineOneName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${subBusinessLineOneName} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        sub_business_line_1_name: subBusinessLineOneName,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_sub_business_line_1(:userId, :subBusinessLineOneName,:screenId, :uniqueId);',
+        {
+          replacements: { userId, subBusinessLineOneName, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          sub_business_line_1_id,
+          sub_business_line_1_name,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          sub_business_line_1_id,
+          sub_business_line_1_name,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Sub Business Line One Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Sub Business Line One Failed');
     }
   }
@@ -150,26 +195,54 @@ class SubBusinessLineOneRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const { sub_business_line_1_name: subBusinessLineOneName } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, subBusinessLineOneName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${subBusinessLineOneName} already Created`);
-
     try {
-      return await this._model.update({
-        sub_business_line_1_name: subBusinessLineOneName,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_sub_business_line_1(:userId, :subBusinessLineOneName, :uniqueId);',
+        {
+          replacements: { userId, subBusinessLineOneName, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Sub Business Line One Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Sub Business Line One Failed');
     }
   }

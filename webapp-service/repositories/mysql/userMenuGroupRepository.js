@@ -216,27 +216,39 @@ class UserMenuGroupRepository {
     const arraySuccess = [];
 
     for (const menuGroupId of splitMenuGroupId) {
-      const checkDuplicate = await this.checkDuplicate(menuGroupId, userId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(menuGroupId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            menu_group_id: menuGroupId,
-            user_id: userId,
-            created_by: oid,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(menuGroupId);
-        } catch (error) {
-          arrayFailed.push(menuGroupId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_user_menu_group(:oid, :userId, :menuGroupId, :screenId, :uniqueId);',
+        {
+          replacements: { oid, userId, menuGroupId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(menuGroupId);
+          } else if (return_code === 404) {
+            arrayFailed.push(menuGroupId);
+          } else if (return_code === 400) {
+            arrayFailed.push(menuGroupId);
+          } else {
+            arrayFailed.push(menuGroupId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(menuGroupId);
+        }
+      } else {
+        arrayFailed.push(menuGroupId);
       }
     }
 
@@ -302,9 +314,6 @@ class UserMenuGroupRepository {
    * @return {Promise<Object>} - Promise with the result of updates categorized into success, duplicated, and failed.
    */
   async update (userId, oid, params) {
-    // Check Data if Exist
-    await this.getOneUser(userId);
-
     const { menu_group_id: menuGroupId, screen_id: screenId } = params;
     const { insert, remove } = menuGroupId;
 
@@ -318,27 +327,39 @@ class UserMenuGroupRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const menuGroupId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(menuGroupId, userId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(menuGroupId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              menu_group_id: menuGroupId,
-              user_id: userId,
-              created_by: oid,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(menuGroupId);
-          } catch (error) {
-            arrayFailed.push(menuGroupId);
+        // Call SP
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_user_menu_group(:oid, :userId, :menuGroupId, :screenId, :uniqueId);',
+          {
+            replacements: { oid, userId, menuGroupId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(menuGroupId);
+            } else if (return_code === 404) {
+              arrayFailed.push(menuGroupId);
+            } else if (return_code === 400) {
+              arrayFailed.push(menuGroupId);
+            } else {
+              arrayFailed.push(menuGroupId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(menuGroupId);
+          }
+        } else {
+          arrayFailed.push(menuGroupId);
         }
       }
     }
@@ -347,21 +368,36 @@ class UserMenuGroupRepository {
     if (splitRemove.length > 0) {
       for (const menuGroupId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: oid,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              menu_group_id: menuGroupId,
-              user_id: userId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_user_menu_group(:oid, :userId, :menuGroupId);',
+            {
+              replacements: { oid, userId, menuGroupId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(menuGroupId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(menuGroupId);
+              } else if (return_code === 404) {
+                arrayFailed.push(menuGroupId);
+              } else if (return_code === 400) {
+                arrayFailed.push(menuGroupId);
+              } else {
+                arrayFailed.push(menuGroupId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(menuGroupId);
+            }
           } else {
             arrayFailed.push(menuGroupId);
           }
