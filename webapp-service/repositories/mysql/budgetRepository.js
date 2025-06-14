@@ -1,4 +1,4 @@
-const { Budget, CompanyDetail, Department, Company, Brand, Branch, CategoryBudget, Configuration, sequelize } = require('../../models');
+const { Budget, Company, Department, Brand, Branch, CategoryBudget, Configuration, sequelize } = require('../../models');
 const { Op } = require('sequelize');
 const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
@@ -10,7 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 class BudgetRepository {
   constructor() {
     this._model = Budget;
-    this._detailCompanyModel = CompanyDetail;
+    this._companyModel = Company;
     this._categoryBudgetModel = CategoryBudget;
     this._configurationModel = Configuration;
     this._primaryKey = this._model.primaryKeyAttribute;
@@ -21,58 +21,59 @@ class BudgetRepository {
     this._searchFields = [
       this._primaryKey,
       'budget_code',
-      'company_detail_id',
+      'company_id',
+      'brand_id',
+      'branch_id',
+      'department_id',
       'year',
-      '$company_detail.department.department_code$',
-      '$company_detail.department.department_name$',
-      '$company_detail.company.company_code$',
-      '$company_detail.company.company_name$',
-      '$company_detail.brand.brand_name$',
-      '$company_detail.branch.branch_name$',
+      '$department.department_code$',
+      '$department.department_name$',
+      '$company.company_code$',
+      '$company.company_name$',
+      '$brand.brand_name$',
+      '$branch.branch_name$',
       'created_date'
     ];
     this._sortingFields = [
       'budget_code',
-      'company_detail_id',
+      'company_id',
+      'brand_id',
+      'branch_id',
+      'department_id',
       'year',
       'total_budget',
       'total_remaining_submit',
       'total_remaining_actual',
       'count_category_budget',
-      '$company_detail.department.department_code$',
-      '$company_detail.department.department_name$',
-      '$company_detail.company.company_code$',
-      '$company_detail.company.company_name$',
-      '$company_detail.brand.brand_name$',
-      '$company_detail.branch.branch_name$',
+      '$department.department_code$',
+      '$department.department_name$',
+      '$company.company_code$',
+      '$company.company_name$',
+      '$brand.brand_name$',
+      '$branch.branch_name$',
     ],
-    this._includeModels = [{
-      model: CompanyDetail.scope('withoutTemplateFields'),
-      as: 'company_detail',
-      required: true,
-      include: [
-        {
-          model: Company.scope('withoutTemplateFields'),
-          as: 'company',
-          required: true
-        },
-        {
-          model: Brand.scope('withoutTemplateFields'),
-          as: 'brand',
-          required: true
-        },
-        {
-          model: Branch.scope('withoutTemplateFields'),
-          as: 'branch',
-          required: true
-        },
-        {
-          model: Department.scope('withoutTemplateFields'),
-          as: 'department',
-          required: true
-        }
-      ]
-    }];
+    this._includeModels = [
+      {
+        model: Company.scope('withoutTemplateFields'),
+        as: 'company',
+        required: true
+      },
+      {
+        model: Brand.scope('withoutTemplateFields'),
+        as: 'brand',
+        required: true
+      },
+      {
+        model: Branch.scope('withoutTemplateFields'),
+        as: 'branch',
+        required: true
+      },
+      {
+        model: Department.scope('withoutTemplateFields'),
+        as: 'department',
+        required: true
+      }
+    ];
   }
 
   async getAll({ search, sort, page, year, companyId, departmentId }) {
@@ -141,12 +142,12 @@ class BudgetRepository {
 
     // Filter berdasarkan company_id
     if (companyId !== '' && typeof companyId !== 'undefined') {
-      conditions.push({ '$company_detail.company_id$': companyId });
+      conditions.push({ '$company.company_id$': companyId });
     }
 
     // Filter berdasarkan department_id
     if (departmentId !== '' && typeof departmentId !== 'undefined') {
-      conditions.push({ '$company_detail.department_id$': departmentId });
+      conditions.push({ '$department.department_id$': departmentId });
     }
 
     // Jika ada kondisi, gabungkan dengan Op.and
@@ -250,26 +251,18 @@ class BudgetRepository {
         attributes: [],
         include: [
           {
-            model: CompanyDetail.scope('withoutTemplateFields'),
-            as: 'company_detail',
+            model: Company.scope('withoutTemplateFields'),
+            as: 'company',
             required: true,
             attributes: [],
-            include: [
-              {
-                model: Company.scope('withoutTemplateFields'),
-                as: 'company',
-                required: true,
-                attributes: [],
-                ...queryWhereCompany
-              },
-              {
-                model: Department.scope('withoutTemplateFields'),
-                as: 'department',
-                required: true,
-                attributes: [],
-                ...queryWhereDepartment
-              }
-            ]
+            ...queryWhereCompany
+          },
+          {
+            model: Department.scope('withoutTemplateFields'),
+            as: 'department',
+            required: true,
+            attributes: [],
+            ...queryWhereDepartment
           }
         ]
       }],
@@ -314,7 +307,10 @@ class BudgetRepository {
 
   async add(userId, params) {
     const {
-      company_detail_id: companyDetailId,
+      company_id: companyId,
+      brand_id: brandId,
+      branch_id: branchId,
+      department_id: departmentId,
       year,
       screen_id: screenId
     } = params;
@@ -330,9 +326,9 @@ class BudgetRepository {
     try {
       // Call the stored procedure
       const [results] = await sequelize.query(
-        'CALL sp_add_ms_budget(:userId, :companyDetailId, :year, :screenId, :uniqueId);',
+        'CALL sp_add_ms_budget(:userId, :companyId, :brandId, :branchId, :departmentId, :year, :screenId, :uniqueId);',
         {
-          replacements: { userId, companyDetailId, year, screenId, uniqueId },
+          replacements: { userId, companyId, brandId, branchId, departmentId, year, screenId, uniqueId },
           type: sequelize.QueryTypes.RAW
         }
       );
@@ -344,7 +340,10 @@ class BudgetRepository {
           return_message,
           budget_id,
           budget_code,
-          company_detail_id,
+          company_id,
+          brand_id,
+          branch_id,
+          department_id,
           year,
           created_by,
           created_date,
@@ -354,7 +353,10 @@ class BudgetRepository {
         const data = {
           budget_id,
           budget_code,
-          company_detail_id,
+          company_id,
+          brand_id,
+          branch_id,
+          department_id,
           year,
           created_by,
           created_date,
@@ -413,11 +415,14 @@ class BudgetRepository {
       for (const item of items) {
         // Call the stored procedure for each item
         const [result] = await sequelize.query(
-          'CALL sp_add_ms_budget(:userId, :companyDetailId, :year, :screenId, :uniqueId);',
+          'CALL sp_add_ms_budget(:userId, :companyId, :brandId, :branchId, :departmentId, :year, :screenId, :uniqueId);',
           {
             replacements: {
               userId,
-              companyDetailId: item.company_detail_id,
+              companyId: item.company_id,
+              brandId: item.brand_id,
+              branchId: item.branch_id,
+              departmentId: item.department_id,
               year: item.year,
               screenId,
               uniqueId: uuidv4().toString()
@@ -435,8 +440,25 @@ class BudgetRepository {
           } = result;
 
           // Handle error codes
-          if (return_code == 200) successResults.push({ company_detail_id: item.company_detail_id, year: item.year, unique_id })
-          else failedResults.push({ company_detail_id: item.company_detail_id, year: item.year, unique_id })
+          if (return_code == 200) {
+            successResults.push({
+              company_id: item.company_id,
+              brand_id: item.brand_id,
+              branch_id: item.branch_id,
+              department_id: item.department_id,
+              year: item.year,
+              unique_id
+            })
+          } else {
+            failedResults.push({
+              company_id: item.company_id,
+              brand_id: item.brand_id,
+              branch_id: item.branch_id,
+              department_id: item.department_id,
+              year: item.year,
+              unique_id
+            })
+          }
         }
       }
 
@@ -461,77 +483,74 @@ class BudgetRepository {
     }
   }
 
-  async generateBudgetCode(companyDetailId, year) {
-    const companyDetailData = await this._detailCompanyModel.findOne({
+  async generateBudgetCode(companyId, year) {
+    const companyData = await this._companyModel.findOne({
       where: {
-        company_detail_id: companyDetailId
+        company_id: companyId
       },
-      include: [
+    });
+
+    if (!companyData) throw new NotFoundError('Company not found');
+
+    const companyCode = companyData.company_code;
+
+    try {
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'SELECT fn_generate_budget_code(:companyCode, :year) as budget_code;',
         {
-          model: Company.scope('withoutTemplateFields'),
-          as: 'company',
-          required: true
+          replacements: { companyCode, year },
+          type: sequelize.QueryTypes.RAW
         }
-      ]
-    });
+      );
 
-    if (!companyDetailData) throw new NotFoundError('Company Detail not found');
-
-    const count = await this._model
-    .scope('all')
-    .count({
-      where: {
-        company_detail_id: companyDetailId,
-        year
-      },
-      attributes: [
-        [sequelize.fn('COUNT', sequelize.col(this._primaryKey)), 'count']
-      ]
-    });
-
-    const budgetCode = `B-${companyDetailData.company.company_code}-${year.substring(2, 4)}-${formatToFourDigits(count+1)}`;
-
-    return budgetCode;
+      // Check if results exist
+      if (results) {
+        return results[0].budget_code;
+      } else {
+        throw new UnprocessableEntityError('Generate Code Failed');
+      }
+    } catch (error) {
+      // For any other errors
+      console.error('Error details:', error);
+      throw new UnprocessableEntityError('Generate Code Failed');
+    }
   }
 
-  async generateBudgetCodeEdit(companyDetailId, year) {
-    const companyDetailData = await this._detailCompanyModel.findOne({
+  async generateBudgetCodeEdit(companyId, year) {
+    const companyData = await this._companyModel.findOne({
       where: {
-        company_detail_id: companyDetailId
-      },
-      include: [
-        {
-          model: Company.scope('withoutTemplateFields'),
-          as: 'company',
-          required: true
-        }
-      ]
+        company__id: companyId
+      }
     });
 
-    if (!companyDetailData) throw new NotFoundError('Company Detail not found');
+    if (!companyData) throw new NotFoundError('Company not found');
 
     const count = await this._model
     .scope('all')
     .count({
       where: {
-        company_detail_id: companyDetailId,
+        company_id: companyId,
         year,
-        [Op.not]: { company_detail_id: companyDetailId }
+        [Op.not]: { company_id: companyId }
       },
       attributes: [
         [sequelize.fn('COUNT', sequelize.col(this._primaryKey)), 'count']
       ]
     });
 
-    const budgetCode = `B-${companyDetailData.company.company_code}-${year.substring(2, 4)}-${formatToFourDigits(count+1)}`;
+    const budgetCode = `B-${companyData.company_code}-${year.substring(2, 4)}-${formatToFourDigits(count+1)}`;
 
     return budgetCode;
   }
 
-  async checkDuplicate(companyDetailId, year) {
+  async checkDuplicate(companyId, brandId, branchId, departmentId, year) {
     const check = await this._model.findAll({
       where: {
-        company_detail_id: companyDetailId,
+        company_id: companyId,
+        brand_id: brandId,
+        branch_id: branchId,
+        department_id: departmentId,
         year
       }
     });
@@ -539,10 +558,13 @@ class BudgetRepository {
     return check.length;
   }
 
-  async checkDuplicateEdit(id, companyDetailId, year) {
+  async checkDuplicateEdit(id, companyId, brandId, branchId, departmentId, year) {
     const check = await this._model.findAll({
       where: {
-        company_detail_id: companyDetailId,
+        company_id: companyId,
+        brand_id: brandId,
+        branch_id: branchId,
+        department_id: departmentId,
         year,
         unique_id: {
           [Op.ne]: id
@@ -555,8 +577,10 @@ class BudgetRepository {
 
   async update(id, userId, params) {
     const {
-      company_detail_id: companyDetailId,
-      total_budget: totalBudget,
+      company_id: companyId,
+      brand_id: brandId,
+      branch_id: branchId,
+      department_id: departmentId,
       year
     } = params;
 
@@ -569,9 +593,9 @@ class BudgetRepository {
     try {
       // Call the stored procedure
       const [results] = await sequelize.query(
-        'CALL sp_update_ms_budget(:userId, :companyDetailId, :year, :uniqueId);',
+        'CALL sp_update_ms_budget(:userId, :companyId, :brandId, :branchId, :departmentId, :year, :uniqueId);',
         {
-          replacements: { userId, companyDetailId, year, uniqueId: id },
+          replacements: { userId, companyId, brandId, branchId, departmentId, year, uniqueId: id },
           type: sequelize.QueryTypes.RAW
         }
       );

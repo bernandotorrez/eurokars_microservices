@@ -21,7 +21,7 @@ module.exports = {
         proc_label: BEGIN
 
             /* Changelog :
-            * v1 : [2025-03-09] (Bernand Dayamuntari Hermawan) : Create Store Procedure Add ${tableName}
+            * v1 : [2025-03-09] (Bernand Dayamuntari Hermawan) : Create Store Procedure Update ${tableName}
             */
 
             /* Flow :

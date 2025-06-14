@@ -10,7 +10,19 @@ const {
 } = require('../utils/validationMessage');
 
 const createSchema = Joi.object({
-  company_detail_id: Joi.string()
+  company_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  brand_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  branch_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  department_id: Joi.string()
     .min(1)
     .max(50)
     .required(),
@@ -52,7 +64,19 @@ const create = (payload) => {
 const createBulkSchema = Joi.object({
   items: Joi.array()
     .items({
-      company_detail_id: Joi.string()
+      company_id: Joi.string()
+        .min(1)
+        .max(50)
+        .required(),
+      brand_id: Joi.string()
+        .min(1)
+        .max(50)
+        .required(),
+      branch_id: Joi.string()
+        .min(1)
+        .max(50)
+        .required(),
+      department_id: Joi.string()
         .min(1)
         .max(50)
         .required(),
@@ -84,7 +108,19 @@ const createBulk = (payload) => {
 };
 
 const updateSchema = Joi.object({
-  company_detail_id: Joi.string()
+  company_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  brand_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  branch_id: Joi.string()
+    .min(1)
+    .max(50)
+    .required(),
+  department_id: Joi.string()
     .min(1)
     .max(50)
     .required(),
@@ -112,7 +148,7 @@ const update = (payload) => {
 };
 
 const generateCodeSchema = Joi.object({
-  company_detail_id: Joi.string()
+  company_id: Joi.string()
     .min(1)
     .max(50)
     .required(),

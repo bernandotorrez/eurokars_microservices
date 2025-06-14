@@ -11,7 +11,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
-
+      Brand.hasMany(models.CompanyDetail, {
+        foreignKey: 'brand_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'company_detail',
+        scope: { is_active: '1' }
+      });
     }
   };
   Brand.init({

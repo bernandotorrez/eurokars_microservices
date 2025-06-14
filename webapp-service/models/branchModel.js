@@ -17,6 +17,15 @@ module.exports = (sequelize, DataTypes) => {
         as: 'city',
         scope: { is_active: '1' }
       });
+
+      Branch.hasMany(models.CompanyDetail, {
+        foreignKey: 'branch_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'company_detail',
+        scope: { is_active: '1' }
+      });
     }
   }
   Branch.init(

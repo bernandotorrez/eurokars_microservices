@@ -24,12 +24,13 @@ module.exports = {
         SET v_old_response = CONCAT(
           '{', CHAR(10),
           '  "budget_code": "', IFNULL(OLD.budget_code, ''), '",', CHAR(10),
-          '  "company_detail_id": "', IFNULL(OLD.company_detail_id, ''), '",', CHAR(10),
+          '  "company_id": "', IFNULL(OLD.company_id, ''), '",', CHAR(10),
+          '  "brand_id": "', IFNULL(OLD.brand_id, ''), '",', CHAR(10),
+          '  "branch_id": "', IFNULL(OLD.branch_id, ''), '",', CHAR(10),
+          '  "department_id": "', IFNULL(OLD.department_id, ''), '",', CHAR(10),
           '  "year": "', IFNULL(OLD.year, ''), '",', CHAR(10),
           '  "created_date": "', IFNULL(OLD.created_date, ''), '",', CHAR(10),
           '  "created_by": "', IFNULL(OLD.created_by, ''), '",', CHAR(10),
-          '  "updated_date": "', IFNULL(OLD.updated_date, ''), '",', CHAR(10),
-          '  "updated_by": "', IFNULL(OLD.updated_by, ''), '",', CHAR(10),
           '  "unique_id": "', IFNULL(OLD.unique_id, ''), '",', CHAR(10),
           '  "is_active": "', IFNULL(OLD.is_active, 0), '"', CHAR(10),
           '}'
@@ -39,12 +40,13 @@ module.exports = {
         SET v_new_response = CONCAT(
           '{', CHAR(10),
           '  "budget_code": "', IFNULL(NEW.budget_code, ''), '",', CHAR(10),
-          '  "company_detail_id": "', IFNULL(NEW.company_detail_id, ''), '",', CHAR(10),
+          '  "company_id": "', IFNULL(NEW.company_id, ''), '",', CHAR(10),
+          '  "brand_id": "', IFNULL(NEW.brand_id, ''), '",', CHAR(10),
+          '  "branch_id": "', IFNULL(NEW.branch_id, ''), '",', CHAR(10),
+          '  "department_id": "', IFNULL(NEW.department_id, ''), '",', CHAR(10),
           '  "year": "', IFNULL(NEW.year, ''), '",', CHAR(10),
           '  "created_date": "', IFNULL(NEW.created_date, ''), '",', CHAR(10),
           '  "created_by": "', IFNULL(NEW.created_by, ''), '",', CHAR(10),
-          '  "updated_date": "', IFNULL(NEW.updated_date, ''), '",', CHAR(10),
-          '  "updated_by": "', IFNULL(NEW.updated_by, ''), '",', CHAR(10),
           '  "unique_id": "', IFNULL(NEW.unique_id, ''), '",', CHAR(10),
           '  "is_active": "', IFNULL(NEW.is_active, 0), '"', CHAR(10),
           '}'

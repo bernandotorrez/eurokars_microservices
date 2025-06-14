@@ -41,12 +41,12 @@ module.exports = {
         type: Sequelize.STRING(200),
         comment: 'Example : IT Hardware'
       },
-      total_category_budget: {
+      total_opening_category_budget: {
         allowNull: false,
         type: Sequelize.DECIMAL(20, 2),
         comment: 'Example : 10000000.00'
       },
-      total_opening_category_budget: {
+      total_category_budget: {
         allowNull: false,
         type: Sequelize.DECIMAL(20, 2),
         comment: 'Example : 10000000.00'

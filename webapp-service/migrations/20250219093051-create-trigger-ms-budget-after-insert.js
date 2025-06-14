@@ -23,7 +23,10 @@ module.exports = {
         SET v_new_response = CONCAT(
           '{', CHAR(10),
           '  "budget_code": "', IFNULL(NEW.budget_code, ''), '",', CHAR(10),
-          '  "company_detail_id": "', IFNULL(NEW.company_detail_id, ''), '",', CHAR(10),
+          '  "company_id": "', IFNULL(NEW.company_id, ''), '",', CHAR(10),
+          '  "brand_id": "', IFNULL(NEW.brand_id, ''), '",', CHAR(10),
+          '  "branch_id": "', IFNULL(NEW.branch_id, ''), '",', CHAR(10),
+          '  "department_id": "', IFNULL(NEW.department_id, ''), '",', CHAR(10),
           '  "year": "', IFNULL(NEW.year, ''), '",', CHAR(10),
           '  "created_date": "', IFNULL(NEW.created_date, ''), '",', CHAR(10),
           '  "created_by": "', IFNULL(NEW.created_by, ''), '",', CHAR(10),

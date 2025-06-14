@@ -16,7 +16,19 @@ module.exports = {
         comment: 'Example : B-EAU-25-0001',
         unique: true
       },
-      company_detail_id: {
+      company_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      brand_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      branch_id: {
+        allowNull: false,
+        type: Sequelize.STRING(50)
+      },
+      department_id: {
         allowNull: false,
         type: Sequelize.STRING(50)
       },
@@ -77,12 +89,48 @@ module.exports = {
 
     // Constraint
     await queryInterface.addConstraint(tableName, {
-      fields: ['company_detail_id'],
+      fields: ['company_id'],
       type: 'foreign key',
-      name: `fk_${tableName}_company_detail_id`,
+      name: `fk_${tableName}_company_id`,
       references: {
-        table: 'ms_company_detail',
-        field: 'company_detail_id'
+        table: 'ms_company',
+        field: 'company_id'
+      },
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
+    });
+
+    await queryInterface.addConstraint(tableName, {
+      fields: ['brand_id'],
+      type: 'foreign key',
+      name: `fk_${tableName}_brand_id`,
+      references: {
+        table: 'ms_brand',
+        field: 'brand_id'
+      },
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
+    });
+
+    await queryInterface.addConstraint(tableName, {
+      fields: ['branch_id'],
+      type: 'foreign key',
+      name: `fk_${tableName}_branch_id`,
+      references: {
+        table: 'ms_branch',
+        field: 'branch_id'
+      },
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT'
+    });
+
+    await queryInterface.addConstraint(tableName, {
+      fields: ['department_id'],
+      type: 'foreign key',
+      name: `fk_${tableName}_department_id`,
+      references: {
+        table: 'ms_department',
+        field: 'department_id'
       },
       onDelete: 'RESTRICT',
       onUpdate: 'RESTRICT'

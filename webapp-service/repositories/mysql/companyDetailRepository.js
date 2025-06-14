@@ -327,6 +327,60 @@ class CompanyDetailRepository {
     }
   }
 
+  async getByCompany(companyId) {
+    const brands = await Brand.scope('withoutTemplateFields').findAndCountAll({
+      include: [{
+        model: this._model, // CompanyDetail
+        as: 'company_detail',
+        where: {
+          company_id: companyId,
+          is_active: '1'
+        },
+        attributes: [], // no need to select anything from CompanyDetail
+        required: true
+    }],
+  });
+
+  return brands;
+}
+
+  async getByCompanyAndBrand (companyId, brandId) {
+    const branches = await Branch.scope('withoutTemplateFields').findAndCountAll({
+        include: [{
+          model: this._model, // CompanyDetail
+          as: 'company_detail',
+          where: {
+            company_id: companyId,
+            brand_id: brandId,
+            is_active: '1'
+          },
+          attributes: [], // no need to select anything from CompanyDetail
+          required: true
+      }],
+    });
+
+    return branches;
+  }
+
+  async getByCompanyAndBrandAndBranch (companyId, brandId, branchId) {
+    const department = await Department.scope('withoutTemplateFields').findAndCountAll({
+        include: [{
+          model: this._model, // CompanyDetail
+          as: 'company_detail',
+          where: {
+            company_id: companyId,
+            brand_id: brandId,
+            branch_id: branchId,
+            is_active: '1'
+          },
+          attributes: [], // no need to select anything from CompanyDetail
+          required: true
+      }],
+    });
+
+    return department;
+  }
+
   async delete (id, userId) {
     // await this.getOne(id);
 

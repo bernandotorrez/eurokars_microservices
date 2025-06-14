@@ -23,6 +23,45 @@ router.get('/', async (req, res) => {
   });
 });
 
+router.get('/company/:companyId', async (req, res) => {
+  const { companyId } = req.params;
+
+  const companyDetail = await companyDetailRepository.getByCompany(companyId);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Retrieve Data',
+    data: companyDetail
+  });
+});
+
+router.get('/company/:companyId/brand/:brandId', async (req, res) => {
+  const { companyId, brandId } = req.params;
+
+  const companyDetail = await companyDetailRepository.getByCompanyAndBrand(companyId, brandId);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Retrieve Data',
+    data: companyDetail
+  });
+});
+
+router.get('/company/:companyId/brand/:brandId/branch/:branchId', async (req, res) => {
+  const { companyId, brandId, branchId } = req.params;
+
+  const companyDetail = await companyDetailRepository.getByCompanyAndBrandAndBranch(companyId, brandId, branchId);
+
+  res.status(httpStatus.OK).json({
+    code: httpStatus.OK,
+    success: true,
+    message: 'Successfully Retrieve Data',
+    data: companyDetail
+  });
+});
+
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 

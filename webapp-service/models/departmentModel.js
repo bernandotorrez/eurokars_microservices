@@ -23,6 +23,15 @@ module.exports = (sequelize, DataTypes) => {
         as: 'user',
         scope: { is_active: '1' }
       });
+
+      Department.hasMany(models.CompanyDetail, {
+        foreignKey: 'department_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'company_detail',
+        scope: { is_active: '1' }
+      });
     }
   };
   Department.init({

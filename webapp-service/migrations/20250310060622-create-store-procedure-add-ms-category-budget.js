@@ -135,14 +135,10 @@ module.exports = {
           END IF;
 
           -- Get the company_code from ms_company
-          SELECT mc.company_code INTO v_company_code
-          FROM ms_budget mb
-          INNER JOIN ms_company_detail mcd ON mcd.company_detail_id = mb.company_detail_id
-          INNER JOIN ms_company mc ON mc.company_id = mcd.company_id
-          WHERE mb.is_active = '1'
-          AND mcd.is_active = '1'
-          AND mc.is_active = '1'
-          AND mb.budget_id = p_budget_id
+          SELECT ms_company.company_code INTO v_company_code
+          FROM ms_company
+          WHERE ms_company.company_id = p_company_id
+          AND ms_company.is_active = '1'
           LIMIT 1;
 
           -- If company code not found, return 404
@@ -154,14 +150,10 @@ module.exports = {
           END IF;
 
           -- Get the department_code from ms_department
-          SELECT md.department_code INTO v_department_code
-          FROM ms_budget mb
-          INNER JOIN ms_company_detail mcd ON mcd.company_detail_id = mb.company_detail_id
-          INNER JOIN ms_department md ON mcd.department_id = md.department_id
-          WHERE mb.is_active = '1'
-          AND mcd.is_active = '1'
-          AND md.is_active = '1'
-          AND mb.budget_id = p_budget_id
+          SELECT ms_department.department_code INTO v_department_code
+          FROM ms_department
+          WHERE ms_department.department_id = p_department_id
+          AND ms_department.is_active = '1'
           LIMIT 1;
 
           -- If department code not found, return 404

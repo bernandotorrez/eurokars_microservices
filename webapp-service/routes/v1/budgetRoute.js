@@ -50,9 +50,9 @@ router.get('/insert-year', async (req, res) => {
 router.get('/generate-code', async (req, res) => {
   budgetValidator.generateCode(req.query);
 
-  const { company_detail_id, year } = req.query;
+  const { company_id: companyId, year } = req.query;
 
-  const budget = await budgetRepository.generateBudgetCode(company_detail_id, year);
+  const budget = await budgetRepository.generateBudgetCode(companyId, year);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

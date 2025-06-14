@@ -13,12 +13,39 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate (models) {
       // define association here
-      Budget.belongsTo(models.CompanyDetail, {
-        foreignKey: 'company_detail_id',
+      Budget.belongsTo(models.Company, {
+        foreignKey: 'company_id',
         onDelete: 'RESTRICT',
         onUpdate: 'RESTRICT',
         keyType: 'string',
-        as: 'company_detail',
+        as: 'company',
+        scope: { is_active: '1' }
+      });
+
+      Budget.belongsTo(models.Brand, {
+        foreignKey: 'brand_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'brand',
+        scope: { is_active: '1' }
+      });
+
+      Budget.belongsTo(models.Branch, {
+        foreignKey: 'branch_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'branch',
+        scope: { is_active: '1' }
+      });
+
+      Budget.belongsTo(models.Department, {
+        foreignKey: 'department_id',
+        onDelete: 'RESTRICT',
+        onUpdate: 'RESTRICT',
+        keyType: 'string',
+        as: 'department',
         scope: { is_active: '1' }
       });
 
@@ -35,7 +62,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.CHAR(13),
       comment: 'Example : B-EAU-25-0001'
     },
-    company_detail_id: {
+    company_id: {
+      allowNull: false,
+      type: DataTypes.STRING(50)
+    },
+    brand_id: {
+      allowNull: false,
+      type: DataTypes.STRING(50)
+    },
+    branch_id: {
+      allowNull: false,
+      type: DataTypes.STRING(50)
+    },
+    department_id: {
       allowNull: false,
       type: DataTypes.STRING(50)
     },

@@ -1,7 +1,6 @@
 const {
   CategoryBudget,
   Budget,
-  CompanyDetail,
   Department,
   Company,
   Brand,
@@ -47,12 +46,12 @@ class CategoryBudgetRepository {
       '$budget.company_detail_id$',
       '$budget.total_budget$',
       '$budget.year$',
-      '$budget.detail_company.department.department_code$',
-      '$budget.detail_company.department.department_name$',
-      '$budget.detail_company.company.company_code$',
-      '$budget.detail_company.company.company_name$',
-      '$budget.detail_company.brand.brand_name$',
-      '$budget.detail_company.branch.branch_name$',
+      '$budget.department.department_code$',
+      '$budget.department.department_name$',
+      '$budget.company.company_code$',
+      '$budget.company.company_name$',
+      '$budget.brand.brand_name$',
+      '$budget.branch.branch_name$',
       'created_date'
     ];
     this._includeModels = [
@@ -88,11 +87,6 @@ class CategoryBudgetRepository {
         as: 'budget',
         required: true,
         include: [
-        {
-          model: CompanyDetail.scope('withoutTemplateFields'),
-          as: 'company_detail',
-          required: true,
-          include: [
             {
               model: Company.scope('withoutTemplateFields'),
               as: 'company',
@@ -113,9 +107,7 @@ class CategoryBudgetRepository {
               as: 'department',
               required: true
             }
-          ]
-        }
-      ]
+        ]
     }];
   }
 
@@ -185,12 +177,12 @@ class CategoryBudgetRepository {
 
     // Filter berdasarkan company_id
     if (companyId !== '' && typeof companyId !== 'undefined') {
-      conditions.push({ '$budget.company_detail.company_id$': companyId });
+      conditions.push({ '$budget.company_id$': companyId });
     }
 
     // Filter berdasarkan department_id
     if (departmentId !== '' && typeof departmentId !== 'undefined') {
-      conditions.push({ '$budget.company_detail.department_id$': departmentId });
+      conditions.push({ '$budget.department_id$': departmentId });
     }
 
     // Jika ada kondisi, gabungkan dengan Op.and
@@ -351,104 +343,57 @@ class CategoryBudgetRepository {
       where: {
         budget_id: budgetId
       },
-      include: [{
-        model: CompanyDetail.scope('withoutTemplateFields'),
-        as: 'company_detail',
-        required: true,
-        include: [
-          {
-            model: Company.scope('withoutTemplateFields'),
-            as: 'company',
-            required: true
-          },
-          {
-            model: Brand.scope('withoutTemplateFields'),
-            as: 'brand',
-            required: true
-          },
-          {
-            model: Branch.scope('withoutTemplateFields'),
-            as: 'branch',
-            required: true
-          },
-          {
-            model: Department.scope('withoutTemplateFields'),
-            as: 'department',
-            required: true
-          }
-        ]
-      }]
+      include: [
+        {
+          model: Company.scope('withoutTemplateFields'),
+          as: 'company',
+          required: true
+        },
+        {
+          model: Brand.scope('withoutTemplateFields'),
+          as: 'brand',
+          required: true
+        },
+        {
+          model: Branch.scope('withoutTemplateFields'),
+          as: 'branch',
+          required: true
+        },
+        {
+          model: Department.scope('withoutTemplateFields'),
+          as: 'department',
+          required: true
+        }
+      ]
     });
 
     if (!budgetData) throw new NotFoundError('Category Budget not found');
 
-    const count = await this._model
-    .scope('all')
-    .count({
-      where: {
-        budget_id: budgetId
-      },
-      attributes: [
-        [sequelize.fn('COUNT', sequelize.col(this._primaryKey)), 'count']
-      ]
-    });
+    const companyCode = budgetData.company.company_code;
+    const departmentCode = budgetData.department.department_code;
+    const year = budgetData.year;
 
-    const budgetCode = `B-${budgetData.company_detail.company.company_code}-${budgetData.company_detail.department.department_code}-${budgetData.year.substring(2, 4)}-${formatToFourDigits(count+1)}`;
+    try {
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'SELECT fn_generate_category_budget_code(:companyCode, :departmentCode, :year) as category_budget_code;',
+        {
+          replacements: { companyCode, departmentCode, year },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
 
-    return budgetCode;
-  }
-
-  async generateCategoryBudgetCodeEdit(id, budgetId) {
-    const budgetData = await this._budgetModel.findOne({
-      where: {
-        budget_id: budgetId
-      },
-      include: [{
-        model: CompanyDetail.scope('withoutTemplateFields'),
-        as: 'company_detail',
-        required: true,
-        include: [
-          {
-            model: Company.scope('withoutTemplateFields'),
-            as: 'company',
-            required: true
-          },
-          {
-            model: Brand.scope('withoutTemplateFields'),
-            as: 'brand',
-            required: true
-          },
-          {
-            model: Branch.scope('withoutTemplateFields'),
-            as: 'branch',
-            required: true
-          },
-          {
-            model: Department.scope('withoutTemplateFields'),
-            as: 'department',
-            required: true
-          }
-        ]
-      }]
-    });
-
-    if (!budgetData) throw new NotFoundError('Category Budget not found');
-
-    const count = await this._model
-    .scope('all')
-    .count({
-      where: {
-        budget_id: budgetId,
-        [Op.not]: { category_budget_id: id }
-      },
-      attributes: [
-        [sequelize.fn('COUNT', sequelize.col(this._primaryKey)), 'count']
-      ]
-    });
-
-    const budgetCode = `B-${budgetData.company_detail.company.company_code}-${budgetData.company_detail.department.department_code}-${budgetData.year.substring(2, 4)}-${formatToFourDigits(count+1)}`;
-
-    return budgetCode;
+      // Check if results exist
+      if (results) {
+        return results[0].category_budget_code;
+      } else {
+        throw new UnprocessableEntityError('Generate Code Failed');
+      }
+    } catch (error) {
+      // For any other errors
+      console.error('Error details:', error);
+      throw new UnprocessableEntityError('Generate Code Failed');
+    }
   }
 
   async checkDuplicate({
