@@ -48,8 +48,18 @@ module.exports = {
 
     // Add Index
     await queryInterface.addIndex(tableName, {
+      fields: ['user_id'],
+      name: `idx_user_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['status_app_id'],
+      name: `idx_status_app_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_user_status_app'
+      name: `idx_is_active_${tableName}`
     });
 
     // Adding constraint

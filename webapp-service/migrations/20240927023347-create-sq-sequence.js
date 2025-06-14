@@ -25,6 +25,13 @@ module.exports = {
       }
     });
 
+    // Index
+    await queryInterface.addIndex(tableName, {
+      fields: ['screen_id'],
+      name: `idx_screen_id_${tableName}`
+    });
+
+    // Constraint
     await queryInterface.addConstraint(tableName, {
       fields: ['screen_id'],
       type: 'foreign key',
@@ -91,7 +98,13 @@ module.exports = {
       (50, 'UCD01', 'Master User Company Detail', 1),
       (51, 'UDV001', 'Master User Division', 1),
       (52, 'USA001', 'Master User Status App', 1),
-      (53, 'ZLG01', 'Login', 1);
+      (53, 'ZLG01', 'Login', 1),
+      (54, 'MCOA01', 'Master COA', 1),
+      (55, 'MSCOA01', 'Master Sub COA', 1),
+      (56, 'MBG01', 'Master Budget', 1),
+      (57, 'MCBG01', 'Master Category Budget', 1),
+      (58, 'MCBG01', 'Master Configuration', 1),
+      (59, 'RFA01', 'Request Form Approval', 1);
     `);
   },
 

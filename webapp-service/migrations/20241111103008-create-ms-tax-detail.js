@@ -53,11 +53,6 @@ module.exports = {
 
     // Index
     await queryInterface.addIndex(tableName, {
-      fields: ['percentage'],
-      name: 'idx_percentage'
-    });
-
-    await queryInterface.addIndex(tableName, {
       fields: ['tax_id'],
       name: `idx_tax_id_${tableName}`
     });

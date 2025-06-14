@@ -50,7 +50,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     account_number: {
       allowNull: false,
-      type: DataTypes.STRING(50)
+      type: DataTypes.STRING(50),
+      unique: true
     },
     created_by: {
       allowNull: false,

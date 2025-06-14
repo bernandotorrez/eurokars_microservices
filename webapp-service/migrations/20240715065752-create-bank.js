@@ -60,12 +60,22 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['bank_name'],
-      name: 'idx_bank_name'
+      name: `idx_bank_name_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['local_code'],
+      name: `idx_local_code_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['swift_code'],
+      name: `idx_swift_code_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_bank'
+      name: `idx_is_active_${tableName}`
     });
   },
 

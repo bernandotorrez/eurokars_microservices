@@ -55,8 +55,13 @@ module.exports = {
 
     // Index
     await queryInterface.addIndex(tableName, {
+      fields: ['tax_code'],
+      name: `idx_tax_code_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
       fields: ['tax_flag'],
-      name: 'idx_tax_flag'
+      name: `idx_tax_flag_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {

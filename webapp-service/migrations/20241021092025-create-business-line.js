@@ -52,12 +52,12 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['business_line_name'],
-      name: 'idx_business_line_name'
+      name: `idx_business_line_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_business_line'
+      name: `idx_is_active_${tableName}`
     });
   },
 

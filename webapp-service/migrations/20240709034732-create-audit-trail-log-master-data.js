@@ -17,6 +17,14 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING(150)
       },
+      old_response: {
+        allowNull: true,
+        type: Sequelize.TEXT('long')
+      },
+      new_response: {
+        allowNull: true,
+        type: Sequelize.TEXT('long')
+      },
       execution_type: {
         allowNull: true,
         type: Sequelize.ENUM('INSERT', 'UPDATE', 'DELETE')

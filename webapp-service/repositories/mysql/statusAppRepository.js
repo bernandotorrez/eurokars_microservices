@@ -113,22 +113,74 @@ class StatusAppRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(statusAppName, redirectUrl);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusAppName} or ${redirectUrl} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        status_app_name: statusAppName,
-        redirect_url: redirectUrl,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_status_app(:userId, :statusAppName, :redirectUrl, :screenId, :uniqueId);',
+        {
+          replacements: {
+            userId,
+            statusAppName,
+            redirectUrl,
+            screenId,
+            uniqueId
+          },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          status_app_id,
+          status_app_name,
+          redirect_url,
+          created_by,
+          created_date,
+          uniqueId
+        } = results;
+
+        const data = {
+          status_app_id,
+          status_app_name,
+          redirect_url,
+          created_by,
+          created_date,
+          uniqueId
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Status App Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Status App Failed');
     }
   }
@@ -163,29 +215,63 @@ class StatusAppRepository {
   }
 
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const { status_app_name: statusAppName, redirect_url: redirectUrl } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, statusAppName, redirectUrl);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${statusAppName} or ${redirectUrl} already Created`);
-
     try {
-      return await this._model.update({
-        status_app_name: statusAppName,
-        redirect_url: redirectUrl,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_status_app(:userId, :statusAppName, :redirectUrl, :uniqueId);',
+        {
+          replacements: {
+            userId,
+            statusAppName,
+            redirectUrl,
+            uniqueId: id
+          },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          uniqueId
+        } = results;
+
+        console.log(results)
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return uniqueId;
+      } else {
+        throw new UnprocessableEntityError('Update Status App Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Status App Failed');
     }
+
   }
 
   async delete (id, userId) {

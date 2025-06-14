@@ -55,13 +55,18 @@ module.exports = {
 
     // Index
     await queryInterface.addIndex(tableName, {
+      fields: ['province_id'],
+      name: `idx_province_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
       fields: ['city_name'],
-      name: 'idx_city_name'
+      name: `idx_city_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_city'
+      name: `idx_is_active_${tableName}`
     });
 
     // Constraint

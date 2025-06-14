@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const city = await cityRepository.add(oid, req.body);
 
-  city.city_id = city.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,
@@ -61,8 +59,6 @@ router.put('/:id', async (req, res) => {
   const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
 
   const city = await cityRepository.update(id, oid, req.body);
-
-  city.city_id = city.null;
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

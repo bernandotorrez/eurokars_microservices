@@ -61,17 +61,17 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['company_name'],
-      name: 'idx_company_name'
+      name: `idx_company_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['company_code'],
-      name: 'idx_company_code'
+      name: `idx_company_code_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_company'
+      name: `idx_is_active_${tableName}`
     });
   },
 

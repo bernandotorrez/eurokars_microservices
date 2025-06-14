@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const brand = await brandRepository.add(oid, req.body);
 
-  brand.brand_name = brand.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

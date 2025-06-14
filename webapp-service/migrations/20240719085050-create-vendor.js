@@ -98,22 +98,22 @@ module.exports = {
     // Index
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_vendor'
+      name: `idx_is_active_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['vendor_name'],
-      name: 'idx_vendor'
+      name: `idx_vendor_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_national'],
-      name: 'idx_is_national_vendor'
+      name: `idx_is_national_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_company'],
-      name: 'idx_is_company_vendor'
+      name: `idx_is_company_${tableName}`
     });
   },
   down: async (queryInterface, Sequelize) => {

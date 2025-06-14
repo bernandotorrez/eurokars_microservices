@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const department = await departmentRepository.add(oid, req.body);
 
-  department.department_id = department.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

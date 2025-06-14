@@ -241,32 +241,91 @@ class RolePermissionRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(menuGroupId, headerNavigationId, roleId);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data already Created');
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        menu_group_id: menuGroupId,
-        header_navigation_id: headerNavigationId,
-        role_id: roleId,
-        can_view: canView,
-        can_add: canAdd,
-        can_edit: canEdit,
-        can_delete: canDelete,
-        can_send: canSend,
-        can_approve: canApprove,
-        can_reject: canReject,
-        can_report: canReport,
-        can_cancel: canCancel,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        `CALL sp_add_ms_role_permission(:userId, :menuGroupId, :headerNavigationId, :roleId,
+        :canView, :canAdd, :canEdit, :canDelete, :canSend, :canApprove, :canReject, :canReport, :canCancel,
+        :screenId, :uniqueId);`,
+        {
+          replacements: { userId, menuGroupId, headerNavigationId, roleId, canView, canAdd,
+            canEdit, canDelete, canSend, canApprove, canReject, canReport, canCancel, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          role_permission_id,
+          header_navigation_id,
+          menu_group_id,
+          role_id,
+          can_view,
+          can_add,
+          can_edit,
+          can_delete,
+          can_send,
+          can_approve,
+          can_reject,
+          can_report,
+          can_cancel,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          role_permission_id,
+          header_navigation_id,
+          menu_group_id,
+          role_id,
+          can_view,
+          can_add,
+          can_edit,
+          can_delete,
+          can_send,
+          can_approve,
+          can_reject,
+          can_report,
+          can_cancel,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Role Permission Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Role Permission Failed');
     }
   }
@@ -343,9 +402,6 @@ class RolePermissionRepository {
    * @throws {UnprocessableEntityError} - If failed to update role permission.
    */
   async update(id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const {
       menu_group_id: menuGroupId,
       header_navigation_id: headerNavigationId,
@@ -361,32 +417,55 @@ class RolePermissionRepository {
       can_cancel: canCancel,
     } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, menuGroupId, headerNavigationId, roleId);
-
-    if (checkDuplicate >= 1) throw new ConflictError('Data Already Created');
-
     try {
-      return await this._model.update({
-        menu_group_id: menuGroupId,
-        header_navigation_id: headerNavigationId,
-        role_id: roleId,
-        can_view: canView,
-        can_add: canAdd,
-        can_edit: canEdit,
-        can_delete: canDelete,
-        can_send: canSend,
-        can_approve: canApprove,
-        can_reject: canReject,
-        can_report: canReport,
-        can_cancel: canCancel,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        `CALL sp_update_ms_role_permission(:userId, :menuGroupId, :headerNavigationId, :roleId,
+        :canView, :canAdd, :canEdit, :canDelete, :canSend, :canApprove, :canReject, :canReport, :canCancel,
+        :uniqueId);`,
+        {
+          replacements: { userId, menuGroupId, headerNavigationId, roleId, canView, canAdd,
+            canEdit, canDelete, canSend, canApprove, canReject, canReport, canCancel, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Role Permission Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Role Permission Failed');
     }
   }

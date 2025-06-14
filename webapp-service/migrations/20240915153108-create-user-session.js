@@ -51,6 +51,17 @@ module.exports = {
       }
     });
 
+    // Index
+    await queryInterface.addIndex(tableName, {
+      fields: ['user_id'],
+      name: `idx_user_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['is_active'],
+      name: `idx_is_active_${tableName}`
+    });
+
     // Adding constraint
     await queryInterface.addConstraint(tableName, {
       fields: ['user_id'],

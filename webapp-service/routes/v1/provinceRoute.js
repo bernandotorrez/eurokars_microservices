@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const province = await provinceRepository.add(oid, req.body);
 
-  province.province_id = province.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

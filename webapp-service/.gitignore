@@ -3,3 +3,4 @@ logs
 .env
 .prod.env
 .test.env
+request_logs/

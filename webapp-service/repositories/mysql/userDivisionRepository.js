@@ -189,27 +189,39 @@ class UserDivisionRepository {
     const arraySuccess = [];
 
     for (const divisionId of splitdivisionId) {
-      const checkDuplicate = await this.checkDuplicate(divisionId, userId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(divisionId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            division_id: divisionId,
-            user_id: userId,
-            created_by: oid,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(divisionId);
-        } catch (error) {
-          arrayFailed.push(divisionId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_user_division(:oid, :userId, :divisionId, :screenId, :uniqueId);',
+        {
+          replacements: { oid, userId, divisionId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(divisionId);
+          } else if (return_code === 404) {
+            arrayFailed.push(divisionId);
+          } else if (return_code === 400) {
+            arrayFailed.push(divisionId);
+          } else {
+            arrayFailed.push(divisionId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(divisionId);
+        }
+      } else {
+        arrayFailed.push(divisionId);
       }
     }
 
@@ -246,9 +258,6 @@ class UserDivisionRepository {
   }
 
   async update (userId, oid, params) {
-    // Check Data if Exist
-    await this.getOneUser(userId);
-
     const { division_id: divisionId, screen_id: screenId } = params;
     const { insert, remove } = divisionId;
 
@@ -262,27 +271,39 @@ class UserDivisionRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const divisionId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(divisionId, userId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(divisionId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              division_id: divisionId,
-              user_id: userId,
-              created_by: oid,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(divisionId);
-          } catch (error) {
-            arrayFailed.push(divisionId);
+        // Call SP
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_user_division(:oid, :userId, :divisionId, :screenId, :uniqueId);',
+          {
+            replacements: { oid, userId, divisionId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(divisionId);
+            } else if (return_code === 404) {
+              arrayFailed.push(divisionId);
+            } else if (return_code === 400) {
+              arrayFailed.push(divisionId);
+            } else {
+              arrayFailed.push(divisionId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(divisionId);
+          }
+        } else {
+          arrayFailed.push(divisionId);
         }
       }
     }
@@ -291,21 +312,36 @@ class UserDivisionRepository {
     if (splitRemove.length > 0) {
       for (const divisionId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: oid,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              division_id: divisionId,
-              user_id: userId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_user_division(:oid, :userId, :divisionId);',
+            {
+              replacements: { oid, userId, divisionId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(divisionId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(divisionId);
+              } else if (return_code === 404) {
+                arrayFailed.push(divisionId);
+              } else if (return_code === 400) {
+                arrayFailed.push(divisionId);
+              } else {
+                arrayFailed.push(divisionId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(divisionId);
+            }
           } else {
             arrayFailed.push(divisionId);
           }

@@ -19,6 +19,9 @@ const { Tracer, ExplicitContext, BatchRecorder, jsonEncoder: { JSON_V2 } } = req
 const { HttpLogger } = require('zipkin-transport-http');
 const { expressMiddleware } = require('zipkin-instrumentation-express');
 
+const env = process.env.NODE_ENV || 'development';
+const envName = env === 'development' ? 'dev' : 'prod';
+
 // Initialize Zipkin tracer
 const zipkinTracer = (serviceName) => {
   const tracer = new Tracer({
@@ -39,6 +42,7 @@ const zipkinTracer = (serviceName) => {
 const proxyMiddleware = require('./middleware/proxy');
 const authMiddleware = require('./middleware/auth');
 const allowedMethodMiddleware = require('./middleware/allowedMethods');
+const requestlogMiddleware = require('./middleware/requestLog');
 
 // List all File Routes
 const authRouterV1 = require('./routes/v1/authenticationRoute');
@@ -78,6 +82,11 @@ const categoryRfaRouteV1 = require('./routes/v1/categoryRfaRoute');
 const userMenuGroupRouteV1 = require('./routes/v1/userMenuGroupRoute');
 const userRoleRouteV1 = require('./routes/v1/userRoleRoute');
 const rolePermissionRouteV1 = require('./routes/v1/rolePermissionRoute');
+const coaRouteV1 = require('./routes/v1/coaRoute');
+const subCoaRouteV1 = require('./routes/v1/subCoaRoute');
+const budgetRouteV1 = require('./routes/v1/budgetRoute');
+const categoryBudgetRouteV1 = require('./routes/v1/categoryBudgetRoute');
+const configurationRouteV1 = require('./routes/v1/configurationRoute');
 
 const app = express();
 
@@ -101,43 +110,48 @@ if (!process.env.JWT_PRIVATE_KEY) {
 }
 
 // List all Routes
-app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service') }), authRouterV1);
-app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service') })], authMiddleware, userRouterV1);
-app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-service') })], authMiddleware, statusAppRouterV1);
-app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service') })], authMiddleware, departmentRouterV1);
-app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service') })], authMiddleware, userStatusAppRouterV1);
-app.use('/v1/company', [expressMiddleware({ tracer: zipkinTracer('company-service') })], authMiddleware, companyRouteV1);
-app.use('/v1/province', [expressMiddleware({ tracer: zipkinTracer('province-service') })], authMiddleware, provinceRouteV1);
-app.use('/v1/city', [expressMiddleware({ tracer: zipkinTracer('city-service') })], authMiddleware, cityRouteV1);
-app.use('/v1/branch', [expressMiddleware({ tracer: zipkinTracer('branch-service') })], authMiddleware, branchRouteV1);
-app.use('/v1/bank', [expressMiddleware({ tracer: zipkinTracer('bank-service') })], authMiddleware, bankRouteV1);
-app.use('/v1/bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('bank.beneficiary-service') })], authMiddleware, bankBeneficiaryRouteV1);
-app.use('/v1/brand', [expressMiddleware({ tracer: zipkinTracer('brand-service') })], authMiddleware, brandRouteV1);
-app.use('/v1/currency', [expressMiddleware({ tracer: zipkinTracer('currency-service') })], authMiddleware, currencyRouteV1);
-app.use('/v1/division', [expressMiddleware({ tracer: zipkinTracer('division-service') })], authMiddleware, divisionRouteV1);
-app.use('/v1/company-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('company.bank.beneficiary-service') })], authMiddleware, companyBankBeneficiaryRouteV1);
-app.use('/v1/vendor-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('vendor.bank.beneficiary-service') })], authMiddleware, vendorBankBeneficiaryRouteV1);
-app.use('/v1/list-company-bank', [expressMiddleware({ tracer: zipkinTracer('list.company.bank-service') })], authMiddleware, listCompanyBankRouteV1);
-app.use('/v1/vendor', [expressMiddleware({ tracer: zipkinTracer('vendor-service') })], authMiddleware, vendorRouteV1);
-app.use('/v1/vendor-company', [expressMiddleware({ tracer: zipkinTracer('vendor.company-service') })], authMiddleware, vendorCompanyRouteV1);
-app.use('/v1/vendor-company-department', [expressMiddleware({ tracer: zipkinTracer('vendor.company.department-service') })], authMiddleware, vendorCompanyDepartmentRouteV1);
-app.use('/v1/header-navigation', [expressMiddleware({ tracer: zipkinTracer('header.navigation-service') })], authMiddleware, headerNavigationmentRouteV1);
-app.use('/v1/user-division', [expressMiddleware({ tracer: zipkinTracer('user.division-service') })], authMiddleware, userDivisionRouteV1);
-app.use('/v1/counter-number', [expressMiddleware({ tracer: zipkinTracer('counter.number-service') })], authMiddleware, counterNumberRouteV1);
-app.use('/v1/business-line', [expressMiddleware({ tracer: zipkinTracer('business.line-service') })], authMiddleware, businessLineRouteV1);
-app.use('/v1/sub-business-line-one', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.one-service') })], authMiddleware, subBusinessLineOneRouteV1);
-app.use('/v1/sub-business-line-two', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.two-service') })], authMiddleware, subBusinessLineTwoRouteV1);
-app.use('/v1/company-detail', [expressMiddleware({ tracer: zipkinTracer('company.detail-service') })], authMiddleware, companyDetailRouteV1);
-app.use('/v1/tax', [expressMiddleware({ tracer: zipkinTracer('tax-service') })], authMiddleware, taxRouteV1);
-app.use('/v1/tax-detail', [expressMiddleware({ tracer: zipkinTracer('tax.detail-service') })], authMiddleware, taxDetailRouteV1);
-app.use('/v1/user-company-detail', [expressMiddleware({ tracer: zipkinTracer('user.company.detail-service') })], authMiddleware, userCompanyDetailRouteV1);
-app.use('/v1/role', [expressMiddleware({ tracer: zipkinTracer('role-service') })], authMiddleware, roleRouteV1);
-app.use('/v1/menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.group-service') })], authMiddleware, menuGroupRouteV1);
-app.use('/v1/menu-menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.menu.group-service') })], authMiddleware, menuMenuGroupRouteV1);
-app.use('/v1/category-rfa', [expressMiddleware({ tracer: zipkinTracer('category.rfa-service') })], authMiddleware, categoryRfaRouteV1);
-app.use('/v1/user-menu-group', [expressMiddleware({ tracer: zipkinTracer('user.menu.group-service') })], authMiddleware, userMenuGroupRouteV1);
-app.use('/v1/user-role', [expressMiddleware({ tracer: zipkinTracer('user.role-service') })], authMiddleware, userRoleRouteV1);
-app.use('/v1/role-permission', [expressMiddleware({ tracer: zipkinTracer('role.permission-service') })], authMiddleware, rolePermissionRouteV1);
+app.use('/v1/auth', expressMiddleware({ tracer: zipkinTracer('authentication-service.'+envName) }), authRouterV1);
+app.use('/v1/user', [expressMiddleware({ tracer: zipkinTracer('user-service.'+envName) })], authMiddleware, userRouterV1);
+app.use('/v1/status-app', [expressMiddleware({ tracer: zipkinTracer('status.app-service.'+envName) })], authMiddleware, statusAppRouterV1);
+app.use('/v1/department', [expressMiddleware({ tracer: zipkinTracer('department-service.'+envName) })], authMiddleware, departmentRouterV1);
+app.use('/v1/user-status-app', [expressMiddleware({ tracer: zipkinTracer('user.status.app-service.'+envName) })], authMiddleware, userStatusAppRouterV1);
+app.use('/v1/company', [expressMiddleware({ tracer: zipkinTracer('company-service.'+envName) })], authMiddleware, companyRouteV1);
+app.use('/v1/province', [expressMiddleware({ tracer: zipkinTracer('province-service.'+envName) })], authMiddleware, provinceRouteV1);
+app.use('/v1/city', [expressMiddleware({ tracer: zipkinTracer('city-service.'+envName) })], authMiddleware, cityRouteV1);
+app.use('/v1/branch', [expressMiddleware({ tracer: zipkinTracer('branch-service.'+envName) })], authMiddleware, branchRouteV1);
+app.use('/v1/bank', [expressMiddleware({ tracer: zipkinTracer('bank-service.'+envName) })], authMiddleware, bankRouteV1);
+app.use('/v1/bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('bank.beneficiary-service.'+envName) })], authMiddleware, bankBeneficiaryRouteV1);
+app.use('/v1/brand', [expressMiddleware({ tracer: zipkinTracer('brand-service.'+envName) })], authMiddleware, brandRouteV1);
+app.use('/v1/currency', [expressMiddleware({ tracer: zipkinTracer('currency-service.'+envName) })], authMiddleware, currencyRouteV1);
+app.use('/v1/division', [expressMiddleware({ tracer: zipkinTracer('division-service.'+envName) })], authMiddleware, divisionRouteV1);
+app.use('/v1/company-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('company.bank.beneficiary-service.'+envName) })], authMiddleware, companyBankBeneficiaryRouteV1);
+app.use('/v1/vendor-bank-beneficiary', [expressMiddleware({ tracer: zipkinTracer('vendor.bank.beneficiary-service.'+envName) })], authMiddleware, vendorBankBeneficiaryRouteV1);
+app.use('/v1/list-company-bank', [expressMiddleware({ tracer: zipkinTracer('list.company.bank-service.'+envName) })], authMiddleware, listCompanyBankRouteV1);
+app.use('/v1/vendor', [expressMiddleware({ tracer: zipkinTracer('vendor-service.'+envName) })], authMiddleware, vendorRouteV1);
+app.use('/v1/vendor-company', [expressMiddleware({ tracer: zipkinTracer('vendor.company-service.'+envName) })], authMiddleware, vendorCompanyRouteV1);
+app.use('/v1/vendor-company-department', [expressMiddleware({ tracer: zipkinTracer('vendor.company.department-service.'+envName) })], authMiddleware, vendorCompanyDepartmentRouteV1);
+app.use('/v1/header-navigation', [expressMiddleware({ tracer: zipkinTracer('header.navigation-service.'+envName) })], authMiddleware, headerNavigationmentRouteV1);
+app.use('/v1/user-division', [expressMiddleware({ tracer: zipkinTracer('user.division-service.'+envName) })], authMiddleware, userDivisionRouteV1);
+app.use('/v1/counter-number', [expressMiddleware({ tracer: zipkinTracer('counter.number-service.'+envName) })], authMiddleware, counterNumberRouteV1);
+app.use('/v1/business-line', [expressMiddleware({ tracer: zipkinTracer('business.line-service.'+envName) })], authMiddleware, businessLineRouteV1);
+app.use('/v1/sub-business-line-one', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.one-service.'+envName) })], authMiddleware, subBusinessLineOneRouteV1);
+app.use('/v1/sub-business-line-two', [expressMiddleware({ tracer: zipkinTracer('sub.business.line.two-service.'+envName) })], authMiddleware, subBusinessLineTwoRouteV1);
+app.use('/v1/company-detail', [expressMiddleware({ tracer: zipkinTracer('company.detail-service.'+envName) })], authMiddleware, companyDetailRouteV1);
+app.use('/v1/tax', [expressMiddleware({ tracer: zipkinTracer('tax-service.'+envName) })], authMiddleware, taxRouteV1);
+app.use('/v1/tax-detail', [expressMiddleware({ tracer: zipkinTracer('tax.detail-service.'+envName) })], authMiddleware, taxDetailRouteV1);
+app.use('/v1/user-company-detail', [expressMiddleware({ tracer: zipkinTracer('user.company.detail-service.'+envName) })], authMiddleware, userCompanyDetailRouteV1);
+app.use('/v1/role', [expressMiddleware({ tracer: zipkinTracer('role-service.'+envName) })], authMiddleware, roleRouteV1);
+app.use('/v1/menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.group-service.'+envName) })], authMiddleware, menuGroupRouteV1);
+app.use('/v1/menu-menu-group', [expressMiddleware({ tracer: zipkinTracer('menu.menu.group-service.'+envName) })], authMiddleware, menuMenuGroupRouteV1);
+app.use('/v1/category-rfa', [expressMiddleware({ tracer: zipkinTracer('category.rfa-service.'+envName) })], authMiddleware, categoryRfaRouteV1);
+app.use('/v1/user-menu-group', [expressMiddleware({ tracer: zipkinTracer('user.menu.group-service.'+envName) })], authMiddleware, userMenuGroupRouteV1);
+app.use('/v1/user-role', [expressMiddleware({ tracer: zipkinTracer('user.role-service.'+envName) })], authMiddleware, userRoleRouteV1);
+app.use('/v1/role-permission', [expressMiddleware({ tracer: zipkinTracer('role.permission-service.'+envName) })], authMiddleware, rolePermissionRouteV1);
+app.use('/v1/coa', [expressMiddleware({ tracer: zipkinTracer('coa-service.'+envName) })], authMiddleware, coaRouteV1);
+app.use('/v1/sub-coa', [expressMiddleware({ tracer: zipkinTracer('sub.coa-service.'+envName) })], authMiddleware, subCoaRouteV1);
+app.use('/v1/budget', [expressMiddleware({ tracer: zipkinTracer('budget-service.'+envName) })], authMiddleware, budgetRouteV1);
+app.use('/v1/category-budget', [expressMiddleware({ tracer: zipkinTracer('category.budget-service.'+envName) })], authMiddleware, categoryBudgetRouteV1);
+app.use('/v1/configuration', [expressMiddleware({ tracer: zipkinTracer('configuration-service.'+envName) })], authMiddleware, configurationRouteV1);
 
 // Middleware Flow : proxyMiddleware -> allowedMethodMiddleware -> zipkinTracer -> authMiddleware
 

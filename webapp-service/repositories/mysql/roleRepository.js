@@ -157,23 +157,70 @@ class RoleRepository {
       screen_id: screenId
     } = params;
 
-    const checkDuplicate = await this.checkDuplicate(roleCode.toUpperCase(), roleName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${roleCode.toUpperCase()} or ${roleName} already Created`);
-
-    const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
+    const uniqueId = uuidv4().toString();
 
     try {
-      return await this._model.create({
-        [this._primaryKey]: generateId[0][0].generated_id,
-        role_code: roleCode.toUpperCase(),
-        role_name: roleName,
-        role_description: roleDescription,
-        created_by: userId,
-        created_date: timeHis(),
-        unique_id: uuidv4().toString()
-      });
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_role(:userId, :roleCode, :roleName, :roleDescription, :screenId, :uniqueId);',
+        {
+          replacements: { userId, roleCode: roleCode.toUpperCase(), roleName, roleDescription, screenId, uniqueId },
+          type: sequelize.QueryTypes.RAW
+        }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          role_id,
+          role_name,
+          role_code,
+          role_description,
+          created_by,
+          created_date,
+          unique_id
+        } = results;
+
+        const data = {
+          role_id,
+          role_name,
+          role_code,
+          role_description,
+          created_by,
+          created_date,
+          unique_id
+        };
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return data;
+      } else {
+        throw new UnprocessableEntityError('Add Role Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Add Role Failed');
     }
   }
@@ -241,32 +288,58 @@ class RoleRepository {
    * @throws {UnprocessableEntityError} - If failed to update role.
    */
   async update (id, userId, params) {
-    // Check Data if Exist
-    await this.getOne(id);
-
     const {
       role_code: roleCode,
       role_name: roleName,
       role_description: roleDescription,
     } = params;
 
-    const checkDuplicate = await this.checkDuplicateEdit(id, roleCode.toUpperCase(), roleName);
-
-    if (checkDuplicate >= 1) throw new ConflictError(`${roleCode.toUpperCase()} or ${roleName} already Created`);
-
     try {
-      return await this._model.update({
-        role_code: roleCode.toUpperCase(),
-        role_name: roleName,
-        role_description: roleDescription,
-        updated_by: userId,
-        updated_date: timeHis()
-      }, {
-        where: {
-          unique_id: id
+      // Call the stored procedure
+      const [results] = await sequelize.query(
+        'CALL sp_update_ms_role(:userId, :roleCode, :roleName, :roleDescription, :uniqueId);',
+        {
+          replacements: { userId, roleCode: roleCode.toUpperCase(), roleName, roleDescription, uniqueId: id },
+          type: sequelize.QueryTypes.RAW
         }
-      });
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message,
+          unique_id
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            throw new ConflictError(return_message);
+          } else if (return_code === 404) {
+            throw new NotFoundError(return_message);
+          } else if (return_code === 400) {
+            throw new BadRequestError(return_message);
+          } else {
+            throw new UnprocessableEntityError(return_message);
+          }
+        }
+
+        // Return the data
+        return unique_id;
+      } else {
+        throw new UnprocessableEntityError('Update Role Failed');
+      }
     } catch (error) {
+      // Re-throw custom errors
+      if (error instanceof ConflictError ||
+          error instanceof BadRequestError ||
+          error instanceof NotFoundError ||
+          error instanceof UnprocessableEntityError) {
+        throw error;
+      }
+      // For any other errors
+      console.error('Error details:', error);
       throw new UnprocessableEntityError('Update Role Failed');
     }
   }

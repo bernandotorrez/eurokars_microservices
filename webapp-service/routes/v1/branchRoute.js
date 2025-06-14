@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const branch = await branchRepository.add(oid, req.body);
 
-  branch.branch_id = branch.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,
@@ -60,9 +58,7 @@ router.put('/:id', async (req, res) => {
 
   const { oid } = getuserId(req.header('Eurokars-Auth-Token') ?? '');
 
-  const branch = await branchRepository.update(id, oid, req.body);
-
-  branch.branch_id = branch.null;
+  await branchRepository.update(id, oid, req.body);
 
   res.status(httpStatus.OK).json({
     code: httpStatus.OK,

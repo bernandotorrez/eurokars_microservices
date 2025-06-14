@@ -3,6 +3,7 @@ const { Op, where } = require('sequelize');
 const UnprocessableEntityError = require('../../exceptions/UnprocessableEntityError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const BadRequestError = require('../../exceptions/BadRequestError');
+const ConflictError = require('../../exceptions/ConflictError');
 const { timeHis } = require('../../utils/globalFunction');
 const { v4: uuidv4 } = require('uuid');
 
@@ -192,27 +193,39 @@ class MenuMenuGroupRepository {
     const arraySuccess = [];
 
     for (const headerNavigationId of splitHeaderNavigationId) {
-      const checkDuplicate = await this.checkDuplicate(headerNavigationId, menuGroupId);
-
-      const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-      if (checkDuplicate >= 1) {
-        arrayDuplicated.push(headerNavigationId);
-      } else {
-        try {
-          await this._model.create({
-            [this._primaryKey]: generateId[0][0].generated_id,
-            header_navigation_id: headerNavigationId,
-            menu_group_id: menuGroupId,
-            created_by: userId,
-            created_date: timeHis(),
-            unique_id: uuidv4().toString()
-          });
-
-          arraySuccess.push(headerNavigationId);
-        } catch (error) {
-          arrayFailed.push(headerNavigationId);
+      // Call SP
+      const [results] = await sequelize.query(
+        'CALL sp_add_ms_menu_menu_group(:userId, :menuGroupId, :headerNavigationId, :screenId, :uniqueId);',
+        {
+          replacements: { userId, menuGroupId, headerNavigationId, screenId, uniqueId: uuidv4().toString() },
+          type: sequelize.QueryTypes.RAW
         }
+      );
+
+      // Check if results exist
+      if (results) {
+        const {
+          return_code,
+          return_message
+        } = results;
+
+        // Handle error codes
+        if (return_code !== 200) {
+          if (return_code === 409) {
+            arrayDuplicated.push(headerNavigationId);
+          } else if (return_code === 404) {
+            arrayFailed.push(headerNavigationId);
+          } else if (return_code === 400) {
+            arrayFailed.push(headerNavigationId);
+          } else {
+            arrayFailed.push(headerNavigationId);
+          }
+        } else {
+          // Return the data
+          arraySuccess.push(headerNavigationId);
+        }
+      } else {
+        arrayFailed.push(headerNavigationId);
       }
     }
 
@@ -249,9 +262,6 @@ class MenuMenuGroupRepository {
   }
 
   async update (menuGroupId, userId, params) {
-    // Check Data if Exist
-    await this.getOneMenuGroup(menuGroupId);
-
     const { header_navigation_id: headerNavigationId, screen_id: screenId } = params;
     const { insert, remove } = headerNavigationId;
 
@@ -265,27 +275,38 @@ class MenuMenuGroupRepository {
     // Insert
     if (splitInsert.length > 0) {
       for (const headerNavigationId of splitInsert) {
-        const checkDuplicate = await this.checkDuplicate(headerNavigationId, menuGroupId);
-
-        const generateId = await sequelize.query(`SELECT fn_gen_number('${screenId}') AS generated_id`);
-
-        if (checkDuplicate >= 1) {
-          arrayDuplicated.push(headerNavigationId);
-        } else {
-          try {
-            await this._model.create({
-              [this._primaryKey]: generateId[0][0].generated_id,
-              menu_group_id: menuGroupId,
-              header_navigation_id: headerNavigationId,
-              created_by: userId,
-              created_date: timeHis(),
-              unique_id: uuidv4().toString()
-            });
-
-            arraySuccess.push(headerNavigationId);
-          } catch (error) {
-            arrayFailed.push(headerNavigationId);
+        const [results] = await sequelize.query(
+          'CALL sp_add_ms_menu_menu_group(:userId, :menuGroupId, :headerNavigationId, :screenId, :uniqueId);',
+          {
+            replacements: { userId, menuGroupId, headerNavigationId, screenId, uniqueId: uuidv4().toString() },
+            type: sequelize.QueryTypes.RAW
           }
+        );
+
+        // Check if results exist
+        if (results) {
+          const {
+            return_code,
+            return_message
+          } = results;
+
+          // Handle error codes
+          if (return_code !== 200) {
+            if (return_code === 409) {
+              arrayDuplicated.push(headerNavigationId);
+            } else if (return_code === 404) {
+              arrayFailed.push(headerNavigationId);
+            } else if (return_code === 400) {
+              arrayFailed.push(headerNavigationId);
+            } else {
+              arrayFailed.push(headerNavigationId);
+            }
+          } else {
+            // Return the data
+            arraySuccess.push(headerNavigationId);
+          }
+        } else {
+          arrayFailed.push(headerNavigationId);
         }
       }
     }
@@ -294,21 +315,36 @@ class MenuMenuGroupRepository {
     if (splitRemove.length > 0) {
       for (const headerNavigationId of splitRemove) {
         try {
-          const update = await this._model.update({
-            is_active: '0',
-            updated_by: userId,
-            updated_date: timeHis()
-          },
-          {
-            where: {
-              menu_group_id: menuGroupId,
-              header_navigation_id: headerNavigationId,
-              is_active: '1'
+          const [results] = await sequelize.query(
+            'CALL sp_update_ms_menu_menu_group(:userId, :menuGroupId, :headerNavigationId);',
+            {
+              replacements: { userId, menuGroupId, headerNavigationId },
+              type: sequelize.QueryTypes.RAW
             }
-          });
+          );
 
-          if (update[0] === 1) {
-            arraySuccess.push(headerNavigationId);
+          // Check if results exist
+          if (results) {
+            const {
+              return_code,
+              return_message
+            } = results;
+
+            // Handle error codes
+            if (return_code !== 200) {
+              if (return_code === 409) {
+                arrayDuplicated.push(headerNavigationId);
+              } else if (return_code === 404) {
+                arrayFailed.push(headerNavigationId);
+              } else if (return_code === 400) {
+                arrayFailed.push(headerNavigationId);
+              } else {
+                arrayFailed.push(headerNavigationId);
+              }
+            } else {
+              // Return the data
+              arraySuccess.push(headerNavigationId);
+            }
           } else {
             arrayFailed.push(headerNavigationId);
           }

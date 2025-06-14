@@ -43,8 +43,6 @@ router.post('/', async (req, res) => {
 
   const vendor = await vendorRepository.add(oid, req.body);
 
-  vendor.id_vendor = vendor.null;
-
   res.status(httpStatus.CREATED).json({
     code: httpStatus.CREATED,
     success: true,

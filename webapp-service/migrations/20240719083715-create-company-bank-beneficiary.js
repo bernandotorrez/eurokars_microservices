@@ -63,18 +63,28 @@ module.exports = {
 
     // Index
     await queryInterface.addIndex(tableName, {
+      fields: ['company_id'],
+      name: `idx_company_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
+      fields: ['bank_id'],
+      name: `idx_bank_id_${tableName}`
+    });
+
+    await queryInterface.addIndex(tableName, {
       fields: ['beneficiary_name'],
-      name: 'idx_beneficiary_name'
+      name: `idx_beneficiary_name_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['account_number'],
-      name: 'idx_account_number'
+      name: `idx_account_number_${tableName}`
     });
 
     await queryInterface.addIndex(tableName, {
       fields: ['is_active'],
-      name: 'idx_is_active_company_beneficiary'
+      name: `idx_is_active_${tableName}`
     });
 
     // Constraint
